@@ -1,0 +1,46 @@
+{
+  "name": "dsh-pet-caishen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "阿财：配套财神主题、可跨应用悬浮的 DSH 工作伙伴",
+  "author": "MrGuang123",
+  "homepage": "https://github.com/MrGuang123/dsh-pet-caishen#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/MrGuang123/dsh-pet-caishen.git" },
+  "bugs": { "url": "https://github.com/MrGuang123/dsh-pet-caishen/issues" },
+  "keywords": ["dsh-plugin", "deepseek-harness", "desktop-pet", "caishen", "acai"],
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "engines": { "node": ">=22", "dsh": "0.2.1-rc.2" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build:client": "node scripts/build-client.mjs",
+    "build:macos": "node scripts/build-macos.mjs",
+    "prepare:native": "node scripts/prepare-native.mjs",
+    "check:native": "node scripts/check-native.mjs",
+    "start:macos": "node scripts/dev.mjs --native",
+    "check": "node scripts/build-client.mjs --check && node scripts/check.mjs",
+    "pretest": "node scripts/build-client.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check:package": "node scripts/package-check.mjs",
+    "check:install": "node scripts/verify-install.mjs"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./assets/acai.svg",
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "companion", "native", "scripts", "assets", "cordis.patch.yml", "locale", "README.md", "LICENSE", "CHANGELOG.md", "docs"],
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-api-session-controller", "@deepseek-ai/dsh-client-ui-session", "@deepseek-ai/dsh-client-ui-workspace", "@deepseek-ai/dsh-client-ui-renderer"]
+    }
+  }
+}

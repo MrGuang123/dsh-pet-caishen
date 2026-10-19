@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>阿财 · 桌面伙伴</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/acai.svg">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <main id="companion" class="companion" data-state="offline" aria-label="阿财桌面伙伴">
+      <header class="preview-heading" aria-hidden="true"><span class="preview-seal">财</span><div><strong>阿财</strong><span>把日子过得有点财气。</span></div><span class="preview-kicker">DESKTOP COMPANION</span></header>
+      <section id="demo-panel" class="demo-panel" aria-label="演示状态" hidden>
+        <div class="demo-heading"><span><i></i>演示模式</span><span>角色状态预览</span></div>
+        <div class="demo-states"><button type="button" data-demo="idle">歇会儿</button><button type="button" data-demo="running">拨算盘</button><button type="button" data-demo="waiting">等掌柜</button><button type="button" data-demo="ready">收工啦</button><button type="button" data-demo="blocked">遇到问题</button><button type="button" data-demo="sleeping">打瞌睡</button></div>
+      </section>
+      <div id="pet-stage" class="pet-stage">
+        <div id="bubble" class="speech-bubble" role="status" aria-live="polite" hidden><span id="bubble-text"></span><button type="button" id="bubble-open" data-hit aria-label="打开对应 DSH 会话" hidden>去看看 <span aria-hidden="true">↗</span></button></div>
+        <div class="pet-wrap">
+          <div class="pet-tools" id="pet-tools"><button type="button" id="fortune" class="round-button" data-hit title="求张开工签" aria-label="求张开工签"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="3" width="10" height="14" rx="2"/><path d="M8 7h4m-4 3h4m-3 3h2"/></svg></button><button type="button" id="return-session" class="round-button" data-hit title="返回刚才的 DSH 聊天" aria-label="返回刚才的 DSH 聊天"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5-5 5 5 5M3 10h9a4 4 0 0 0 0-8"/></svg></button><button type="button" id="menu-toggle" class="round-button" data-hit aria-label="阿财的设置" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="5" cy="10" r="1"/><circle cx="10" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg></button></div>
+          <button id="pet" class="pet" type="button" data-hit aria-label="摸摸阿财，拖动可以换个位置" title="摸摸阿财 · 拖动换个位置"><span id="character" class="character" aria-hidden="true"></span></button>
+          <button type="button" id="status" class="status-badge" data-hit aria-label="查看阿财状态"><span class="status-dot"></span><span id="status-text">正在连接 DSH</span><span id="demo-badge" class="demo-badge" hidden>演示</span></button>
+        </div>
+        <section id="settings" class="settings" aria-label="阿财的设置" hidden>
+          <div class="settings-heading"><div><strong>阿财的小铺</strong><span id="connection-text">正在连接 DSH…</span></div><button type="button" class="close-button" id="menu-close" data-hit aria-label="关闭设置">×</button></div>
+          <label class="size-label" for="size">个头 <output id="size-value" for="size">160</output></label><input id="size" data-hit type="range" min="120" max="240" step="10" value="160" aria-label="阿财大小">
+          <label class="switch-row" data-hit><span>安静陪伴<small>只在你点我时说话</small></span><input id="quiet" type="checkbox"><span class="switch" aria-hidden="true"></span></label>
+          <label class="switch-row" data-hit><span>减少动画<small>让动作更轻一些</small></span><input id="reduced-motion" type="checkbox"><span class="switch" aria-hidden="true"></span></label>
+          <div class="settings-actions"><button type="button" id="open-session" data-hit>返回 DSH <span aria-hidden="true">↗</span></button><button type="button" id="hide" data-hit>收起阿财</button></div>
+          <button type="button" id="quit" class="quit" data-hit hidden>退出阿财</button>
+          <p id="settings-error" class="settings-error" role="alert" hidden></p>
+        </section>
+      </div>
+      <button type="button" id="restore" class="restore" data-hit hidden><span class="restore-seal">财</span>阿财在这里<span aria-hidden="true">↖</span></button>
+      <footer class="preview-footer">点一下，沾点财气 <span>·</span> 拖一拖，换个工位</footer>
+    </main>
+  </body>
+</html>

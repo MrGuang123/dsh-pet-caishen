@@ -1,0 +1,34 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run check
+      - run: npm test
+      - run: npm run check:package
+      - run: npm run check:install
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run build:macos
+      - run: npm test
+      - run: codesign --verify --strict build/Acai.app
+      - run: codesign --verify --strict --all-architectures native/Acai.app
+      - run: npm run check:package
+      - run: npm run check:install

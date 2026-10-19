@@ -1,0 +1,42 @@
+.acai-fortune {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex: none;
+	align-self: center;
+	height: 30px;
+	box-sizing: border-box;
+	padding: 0 10px;
+	border: 1px solid #968e822e;
+	border-radius: 999px;
+	background: #958b7f0e;
+	color: var(--dsw-alias-label-caption, #8b8176);
+	font: inherit;
+	font-size: 11px;
+	line-height: 1;
+	cursor: pointer;
+	transition: color .15s, border-color .15s, background .15s;
+}
+
+.acai-fortune[data-acai-fortune=online] {
+	border-color: #589d7040;
+	background: #6da87d14;
+	color: #35805b;
+}
+
+.acai-fortune:disabled {
+	cursor: default;
+}
+
+.acai-fortune:focus-visible {
+	outline: 2px solid var(--dsw-alias-state-business-primary, #b3261e);
+	outline-offset: 2px;
+}
+
+.acai-fortune__dot {
+	width: 5px;
+	height: 5px;
+	flex: none;
+	border-radius: 50%;
+	background: currentColor;
+}

@@ -1,0 +1,14 @@
+/* Until the theme publishes __DSH_CAISHEN_STATUS_V1__, the pet owns the only control. */
+.caishen-utilities .caishen-status:not([data-acai-fortune]),
+.caishen-hero-actions .caishen-status:not([data-acai-fortune]) {
+  display: none !important;
+}
+
+/* Keep the host row centered for the model/menu/pill. The merit badge is
+   positioned on its own: its image is 48px with a -4px lift inside a 44px
+   slot, so a relative +6px lifts it onto the 30px controls' center line. */
+.caishen-utilities,
+.caishen-hero-actions {
+  position: relative;
+  top: 6px;
+}

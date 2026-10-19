@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Match tag to package version
+        run: node --input-type=module -e 'import p from "./package.json" with { type:"json" }; if (process.env.GITHUB_REF_NAME !== `v${p.version}`) process.exit(1)'
+      - run: npm run check
+      - run: npm test
+      - run: codesign --verify --strict --all-architectures native/Acai.app
+      - run: npm run check:package
+      - run: npm run check:install
+      - name: Package release
+        run: |
+          mkdir -p output/release
+          npm pack --ignore-scripts --pack-destination output/release
+          cd output/release
+          shasum -a 256 *.tgz > SHA256SUMS
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" output/release/*.tgz output/release/SHA256SUMS --verify-tag --title "阿财 $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md
