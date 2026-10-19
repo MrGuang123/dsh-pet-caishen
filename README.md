@@ -6,9 +6,9 @@
 
 项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前版本 **0.1.0**，适配 **DSH 0.2.1-rc.2、macOS 13+**。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；其它 DSH 版本未验证。
 
-![阿财角色演示](docs/screenshots/acai-preview.jpg)
+![阿财当前形象 · 空闲状态演示](docs/screenshots/acai-preview.png)
 
-上图为角色演示界面，不代表真实 DSH 任务状态；原生运行时背景透明，不显示演示画布边框。
+上图由当前版本的角色与界面代码直接截取，展示阿财的空闲形象；演示不代表真实 DSH 任务状态。原生运行时背景透明，不显示演示画布边框。
 
 ## 已实现
 

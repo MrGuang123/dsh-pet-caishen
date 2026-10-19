@@ -68,7 +68,7 @@ HTTP 测试需要本机 loopback 监听权限。sandbox 的 EPERM 不是测试�
 - 使用重建后的真实 `build/Acai.app` 做了隔离冒烟：收到 `hello` protocol 1，启动后 `visible:true`，收起后 `visible:false` 且窗口离屏，再唤回后恢复 `visible:true`。旧二进制缺少握手时会在超时后终止并提示重新构建；此前正是未重建的旧二进制导致窗口已显示、开关却停留在“财运正在路上”。
 - 结束原生演示后，已检查无残留宠物进程；浏览器演示服务也已停止。
 
-角色演示图位于 `docs/screenshots/acai-preview.jpg`，过程截图位于忽略的 `output/`。
+角色演示图位于 `docs/screenshots/acai-preview.png`，由当前 `assets/acai.svg` 与网页样式在 420×440 视口直接截取，展示空闲状态的大眼睛、长眉毛与修整后的鬓角；已替换早期小眼睛版本的 JPEG。过程截图位于忽略的 `output/`。
 
 ## 仍需人工验收
 
