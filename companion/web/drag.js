@@ -1,6 +1,6 @@
 /** Native gestures use only begin/end messages. AppKit owns cursor coordinates,
  * movement thresholds and release detection, including lost WebKit events. */
-export function attachPetDrag({ pet, events, native, bridge, onStart, onDragging, onClick, onBrowserMove }) {
+export function attachPetDrag({ pet, events, native, bridge, onStart, onDragging, onClick, onBrowserMove, isLocked = () => false }) {
   let gesture = null;
   let sequence = 0;
   let suppressClick = false;
@@ -14,6 +14,7 @@ export function attachPetDrag({ pet, events, native, bridge, onStart, onDragging
 
   pet.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || gesture) return;
+    if (isLocked()) return;
     onStart();
     suppressClick = false;
     sequence = sequence % 1_000_000_000 + 1;
@@ -65,6 +66,6 @@ export function attachPetDrag({ pet, events, native, bridge, onStart, onDragging
   pet.addEventListener('click', (event) => {
     // Keyboard activation has no pointer gesture. Native mouse clicks are
     // confirmed above so asynchronous pointer events cannot turn a drag into a pat.
-    if (event.detail === 0 || (!native && !suppressClick)) onClick();
+    if (event.detail === 0 || isLocked() || (!native && !suppressClick)) onClick();
   });
 }

@@ -11,7 +11,7 @@ test("GitHub installs use the bundled companion without a local build directory"
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-function fixture(t, { hello = true, protocol = NATIVE_PROTOCOL, ...overrides } = {}) {
+function fixture(t, { hello = true, ready = true, protocol = NATIVE_PROTOCOL, ...overrides } = {}) {
   const children = [];
   const calls = [];
   const controller = createDesktopController({
@@ -27,10 +27,10 @@ function fixture(t, { hello = true, protocol = NATIVE_PROTOCOL, ...overrides } =
       child.stdin.on("data", chunk => { child.input += chunk; });
       child.kill = signal => { child.killed = true; child.signals.push(signal); return true; };
       child.report = visible => child.stdout.write(JSON.stringify({ type: "visibility", visible }) + "\n");
-      child.hello = (version = protocol) => child.stdout.write(JSON.stringify({ type: "hello", protocol: version }) + "\n");
+      child.hello = (version = protocol) => child.stdout.write(JSON.stringify({ type: "hello", protocol: version, version: "0.1.0" }) + "\n");
       child.exit = (code = 0, signal = null) => { child.exitCode = code; child.signalCode = signal; child.emit("exit", code, signal); };
       children.push(child);
-      queueMicrotask(() => { if (hello) child.hello(); child.emit("spawn"); });
+      queueMicrotask(() => { if (hello) child.hello(); if (ready) child.stdout.write('{"type":"renderer","ready":true}\n'); child.emit("spawn"); });
       return child;
     },
     ...overrides
@@ -202,4 +202,26 @@ test("unavailable native program cannot launch; dispose terminates even after co
   assert.equal(controller.getStatus().visible, false);
   assert.equal(controller.getStatus().running, false);
   await assert.rejects(controller.start(), /已停用/);
+});
+
+test('visibility alone is insufficient: launch waits for renderer and failure remains recoverable', async t => {
+  const {controller,children} = fixture(t, {ready:false});
+  let ready = false; const starting = controller.start().then(()=> {ready=true;});
+  await tick(); children[0].report(true); await tick();
+  assert.equal(ready,false); assert.equal(controller.getStatus().rendererReady,false);
+  children[0].stdout.write('{"type":"renderer","ready":true}\n{"type":"shortcut","state":"conflict"}\n');
+  await starting;
+  assert.equal(controller.getStatus().rendererReady,true);
+  assert.equal(controller.getStatus().shortcut,'conflict');
+  assert.equal(controller.getStatus().nativeVersion,'0.1.0');
+  children[0].stdout.write('{"type":"renderer","ready":false}\n');
+  assert.equal(controller.getStatus().rendererReady,false);
+});
+
+test('a missing renderer confirmation times out and stops only the tracked companion', async t => {
+  const {controller,children}=fixture(t,{ready:false,rendererTimeout:20});
+  const starting=controller.start();await tick();children[0].report(true);
+  await assert.rejects(starting,/画面尚未就绪/);
+  assert.equal(controller.getStatus().running,false);
+  assert.deepEqual(children[0].signals,['SIGTERM']);
 });

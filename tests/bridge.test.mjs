@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { request as httpRequest } from "node:http";
 import { startBridge } from "../lib/bridge-server.js";
 import { createStateStore } from "../lib/state.js";
+import { normalizeStoredPreferences } from "../lib/preference-schema.js";
 import { createPreferenceWriter, loadPreferences } from "../lib/preferences.js";
 
 async function fixture(t, options = {}) {
@@ -104,6 +105,41 @@ test("preference writes are atomic, ordered and contain no conversation data", a
   const save = createPreferenceWriter(path);
   await Promise.all([save({ size: 180 }), save({ size: 220, quiet: true })]);
   const data = JSON.parse(await readFile(path, "utf8"));
-  assert.deepEqual(data, { size: 220, quiet: true, reducedMotion: false, hidden: false });
+  assert.deepEqual(data, normalizeStoredPreferences({ size: 220, quiet: true, reducedMotion: false, hidden: false }));
   assert.deepEqual(await loadPreferences(path), data);
+});
+
+test('versioned preferences and snooze preserve selection; unknown fields cannot enter storage', async t => {
+  const writes = [];
+  const {store,request} = await fixture(t,{savePreferences:async value=>writes.push(value)});
+  const deadline = Date.now()+1800000;
+  assert.equal((await request('api/preferences',{notificationMode:'attention',snoozedUntil:deadline,mini:true,largeText:true,shortcutKey:null})).status,200);
+  assert.equal(store.getSnapshot().preferences.notificationMode,'attention');
+  assert.equal(store.getSnapshot().preferences.snoozedUntil,deadline);
+  assert.equal(Object.hasOwn(writes[0],'quiet'),false);
+  assert.equal((await request('api/preferences',{title:'private-sentinel'})).status,400);
+  assert.equal((await request('api/preferences',{shortcutKey:'Command+Enter'})).status,400);
+  assert.equal(writes.length,1);
+});
+
+test('a stale reminder cannot be dismissed and diagnostics never echo raw failures or task data', async t => {
+  const {store,request} = await fixture(t,{getDesktopStatus:()=>({running:true,visible:true,rendererReady:false,shortcut:'conflict',error:'private-sentinel http://127.0.0.1:54321/launch?token=secret',sessionId:'private-id',title:'private-title'})});
+  store.upsertSession({sessionId:'known',status:'ready',completion:{id:'second',acknowledged:false}});
+  assert.equal((await request('api/action',{type:'dismiss-reminder',sessionId:'known',completionId:'first'})).status,409);
+  assert.equal(store.getSession('known').status,'ready');
+  assert.equal((await request('api/action',{type:'dismiss-reminder',sessionId:'known',completionId:'second'})).status,200);
+  assert.equal(store.getSession('known').status,'idle');
+  const diagnostics=await (await request('api/diagnostics')).text();
+  assert.doesNotMatch(diagnostics,/private|54321|token|secret|known|second/);
+  assert.match(diagnostics,/companion_unavailable/);
+});
+
+test('an old bubble cannot navigate a newer completion under the same session', async t => {
+  const opened=[];
+  const {store,request}=await fixture(t,{onOpenSession:(...args)=>opened.push(args)});
+  store.upsertSession({sessionId:'known',status:'ready',completion:{id:'new',acknowledged:false}});
+  assert.equal((await request('api/action',{type:'open-session',sessionId:'known',completionId:'old'})).status,409);
+  assert.equal(opened.length,0);
+  assert.equal((await request('api/action',{type:'open-session',sessionId:'known',completionId:'new'})).status,200);
+  assert.deepEqual(opened,[['known','new']]);
 });

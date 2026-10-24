@@ -18,7 +18,7 @@
   <g class="acai-float">
     <g class="cloud" stroke="#C99C4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M58 274c-17-13-37-2-37 14 0 18 20 29 40 24 9 12 29 12 42 6 12 12 39 13 55 5 15 11 41 9 54-1 19 7 39 0 45-12 23 3 42-10 40-28-1-14-15-23-31-19-7-20-29-24-43-12-12-13-31-11-41-1-17-11-39-8-48 6-18-14-43-9-50 6-12-6-24 0-26 12Z" fill="url(#acai-cloud)"/>
-      <path d="M36 284c-7 12 5 24 18 18m16-24c-17 2-19 25-2 29 15 3 24-13 13-18-6-3-10 1-9 5m50-18c-13 0-22 10-20 21 3 16 28 17 34 5m52-20c-12-5-25 4-23 16 2 13 20 16 27 6 4-6-2-13-7-9m52-25c11-6 24 3 22 14-2 9-10 11-15 6m24-15c18 2 19 21 4 25" stroke="#D9B26C"/>
+      <path class="fine-detail" d="M36 284c-7 12 5 24 18 18m16-24c-17 2-19 25-2 29 15 3 24-13 13-18-6-3-10 1-9 5m50-18c-13 0-22 10-20 21 3 16 28 17 34 5m52-20c-12-5-25 4-23 16 2 13 20 16 27 6 4-6-2-13-7-9m52-25c11-6 24 3 22 14-2 9-10 11-15 6m24-15c18 2 19 21 4 25" stroke="#D9B26C"/>
       <path d="M98 265c8-9 21-9 29-4m91-1c7-6 18-6 24 0" stroke="#FFFDF4" stroke-width="4"/>
     </g>
     <g class="body">
@@ -55,7 +55,9 @@
       <path d="M104 121c1-32 25-47 57-47 34 0 58 17 58 49l2 38c1 32-27 54-62 54-34 0-61-22-60-53Z" fill="url(#acai-skin)" stroke="#8A5034" stroke-width="3"/>
       <path d="M100 116 106 116c-1 14-1 26-2 36-2-12-4-24-4-36Zm120 0-6 0c1 14 1 26 2 36 2-12 4-24 4-36Z" fill="#3D2D26"/>
       <ellipse cx="119" cy="177" rx="21" ry="14" fill="url(#acai-blush)"/><ellipse cx="201" cy="177" rx="21" ry="14" fill="url(#acai-blush)"/>
-      <path d="M112 134c9-6 20-7 31-3m37 0c11-4 22-3 31 3" stroke="#51382B" stroke-width="5" stroke-linecap="round"/>
+      <path class="base-brows" d="M112 134c9-6 20-7 31-3m37 0c11-4 22-3 31 3" stroke="#51382B" stroke-width="5" stroke-linecap="round"/>
+      <g class="face-waiting" stroke="#51382B" stroke-width="5" stroke-linecap="round"><path d="M112 129q16-13 31-5m37 7q16-5 31 3"/></g>
+      <g class="face-blocked" stroke="#51382B" stroke-width="4" stroke-linecap="round"><path d="M112 130q17 4 31 0m37 0q15-8 31-4M148 190q12-7 24 0"/></g>
       <g class="eyes-open">
         <ellipse cx="132" cy="153" rx="13" ry="16" fill="#FFF9EC" stroke="#794B35" stroke-width="1.8"/>
         <ellipse cx="187" cy="153" rx="13" ry="16" fill="#FFF9EC" stroke="#794B35" stroke-width="1.8"/>
@@ -66,13 +68,13 @@
         <path d="M128 163c3 2 7 2 10-1m43 1c3 2 7 2 10-1" stroke="#E6AF6A" stroke-width="2.2" stroke-linecap="round"/>
         <ellipse cx="129" cy="147" rx="3.8" ry="4.6" fill="#FFFDF5"/>
         <ellipse cx="182" cy="147" rx="3.8" ry="4.6" fill="#FFFDF5"/>
-        <circle cx="138" cy="158" r="2" fill="#FFF8DC"/><circle cx="191" cy="158" r="2" fill="#FFF8DC"/>
+        <circle class="eye-detail" cx="138" cy="158" r="2" fill="#FFF8DC"/><circle class="eye-detail" cx="191" cy="158" r="2" fill="#FFF8DC"/>
       </g>
       <g class="eyes-closed" display="none" stroke="#51382B" stroke-width="3.5" stroke-linecap="round"><path d="M120 155q12-14 24 0m31 0q12-14 24 0"/></g>
       <path d="M153 169c3-3 9-3 12 0 1 4-2 7-6 7s-7-3-6-7Z" fill="#ECAF80"/>
       <path d="M156 168c1.5-1 3.5-1 5-.5" stroke="#FFF1CF" stroke-width="2.5" stroke-linecap="round"/>
       <path class="smile" d="M146 186c7 11 19 11 26 0" fill="#A34232" stroke="#713B2A" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M151 188c5 3 11 3 16 0" stroke="#FFF3D9" stroke-width="2.8" stroke-linecap="round"/>
+      <path class="smile-teeth" d="M151 188c5 3 11 3 16 0" stroke="#FFF3D9" stroke-width="2.8" stroke-linecap="round"/>
       <g class="moustache" fill="url(#acai-ink)"><path d="M160 178c-10-10-15 5-25-1 0 7 7 10 14 6 4-3 7-4 11-5Z"/><path d="M159 178c10-10 15 5 25-1 0 7-7 10-14 6-4-3-7-4-11-5Z"/></g>
       <g class="beard"><path d="M149 201c3 2 6 3 10 3 5 0 8-1 11-3 3 10-1 18-11 24-9-6-13-14-10-24Z" fill="url(#acai-ink)" stroke="#34291F" stroke-width="1.5"/><path d="M154 207c0 5 1 9 4 13m6-13c0 5-1 9-4 13" stroke="#79543C" stroke-width="1.5" stroke-linecap="round" opacity=".6"/></g>
       <g class="hat" stroke="#A56829" stroke-width="2.5" stroke-linejoin="round">

@@ -1,5 +1,7 @@
 # 开发与打包
 
+新增工作先对照 [产品范围](PRODUCT.md)、[需求与验收标准](REQUIREMENTS.md) 和 [实施计划](IMPLEMENTATION_PLAN.md)。当前规划为 2D 体验增强；3D 排在其验收后的阶段。实现状态见验证记录，协议文档按工作树同步，发布说明在实际发布时更新。数据边界与迁移见 [STATE_CONTRACT.md](STATE_CONTRACT.md)。
+
 ## 工具与命令
 
 Node.js 22+；macOS 原生构建使用 `xcrun swiftc`、AppKit、WebKit、Carbon 与 `codesign`。无 npm 安装脚本、运行依赖或远程字体。
@@ -67,3 +69,9 @@ lib/client/
 对外分发前运行 `npm run prepare:native`，编译 arm64 + x86_64 通用程序，执行 ad-hoc 签名，复制分发 App 到 `native/` 并记录源码和二进制摘要。`native/` 是为 GitHub 安装跟踪的分发产物，编译缓存仍在忽略的 `build/`。标签触发 GitHub Release，详细步骤见 [RELEASING.md](RELEASING.md)。Developer ID 公证未提供，Intel 仍需实机验收。
 
 不提交 `build/`、`output/`、本机登录凭证或偏好文件。无需修改已安装的 DSH 应用包，也不要复制用户账户、profile 或会话配置到本仓库。
+
+## 隔离基线与多实例
+
+`node scripts/baseline.mjs` 在忽略的 output/ 中复制 App 并更换偏好域，仅运行合成任务，生成 idle／running／hidden 采样。它不读取日常任务，也不替代实际拖动、能耗或 GPU 评估。
+
+插件配置支持 `stateDirectory`、`instanceId` 和 `autoLaunch:false`。多 profile 若使用相同默认目录，需要配置不同 instanceId 或独立 stateDirectory 才能隔离偏好；不要复制日常 profile 进行测试。instanceId 仅允许 1–64 位字母、数字或连字符。

@@ -67,3 +67,32 @@ test("return chat is remembered separately from priority and survives an idle ro
   assert.throws(() => store.setLastSessionId("bad\nvalue"));
   assert.equal(store.getLastSessionId(), "reading-chat");
 });
+
+test('presentation survives renderer reconnect but cannot suppress a later event', () => {
+  const store = createStateStore({mode:'demo'});
+  store.upsertSession({sessionId:'a',status:'ready',notificationId:'first',completion:{id:'first',acknowledged:false},updatedAt:1});
+  assert.equal(store.presentReminder('a','first'),true);
+  assert.equal(store.getSnapshot().activity.notificationPresented,true);
+  store.upsertSession({sessionId:'a',status:'ready',notificationId:'second',completion:{id:'second',acknowledged:false},updatedAt:2});
+  assert.equal(store.presentReminder('a','first'),false);
+  assert.equal(store.getSnapshot().activity.notificationPresented,false);
+});
+
+test('live revisions and receiving order tolerate a wall-clock rollback', () => {
+  const store=createStateStore({mode:'demo'});
+  store.upsertSession({sessionId:'a',sourceId:'root-a',revision:1,status:'waiting',updatedAt:1000});
+  store.upsertSession({sessionId:'b',sourceId:'root-b',revision:1,status:'waiting',updatedAt:500});
+  assert.equal(store.getSnapshot().activity.sessionId,'b');
+  store.upsertSession({sessionId:'a',sourceId:'root-a',revision:2,status:'blocked',updatedAt:100});
+  assert.equal(store.getSession('a').status,'blocked');
+  store.upsertSession({sessionId:'a',sourceId:'root-a',revision:1,status:'running',updatedAt:2000});
+  assert.equal(store.getSession('a').status,'blocked');
+});
+
+test('local fortunes visit the library without immediately repeating a response', t => {
+  t.mock.method(Math,'random',()=>0);
+  const store=createStateStore({mode:'demo'}), seen=new Set();
+  let previous=store.getSnapshot().fortune.text;
+  for(let i=0;i<16;i++){const next=store.nextFortune();assert.notEqual(next,previous);seen.add(next);previous=next;}
+  assert.equal(seen.size,16);
+});

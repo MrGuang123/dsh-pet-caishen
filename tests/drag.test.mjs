@@ -113,3 +113,11 @@ test('right button and unrelated pointers cannot initiate or stop a drag', () =>
   f.pointer('pointerup');
   assert.equal(f.messages.length, 2);
 });
+
+test('locked native petting never starts a drag and still handles one click', () => {
+  const pet = new EventTarget(), events = new EventTarget(), messages=[];
+  let clicks=0;
+  attachPetDrag({pet,events,native:true,bridge:m=>messages.push(m),isLocked:()=>true,onStart(){},onDragging(){},onClick(){clicks++;},onBrowserMove(){}});
+  emit(pet,'pointerdown',{button:0,pointerId:1});emit(pet,'click',{detail:1});
+  assert.equal(messages.length,0);assert.equal(clicks,1);
+});

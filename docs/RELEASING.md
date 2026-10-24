@@ -21,6 +21,8 @@
 3. 从干净 Git checkout 在临时 profile 用 DSH 的插件管理器安装，核对元信息、启用／停用、财运开关、真实任务状态、返回聊天和退出清理；不要修改日常 profile 来代替隔离验收。Intel 实机与多屏检查单独记录，未完成时不要声称已完成。
 4. 将源码、`lib/client.js`、`native/Acai.app` 和 `native/manifest.json` 提交；确认无缓存、本机偏好或凭证。Git 必须保留 `native/Acai.app/Contents/MacOS/Acai` 的可执行位。
 5. 推送提交与对应 `v<version>` 标签。标签工作流检查版本一致、完整测试、原生签名与干净安装，成功后发布 GitHub Release，附 `.tgz` 和 `SHA256SUMS`。不向 npm 发布，`private: true` 保留。
+   带预发布后缀的标签（例如 `v0.2.0-rc.1`）会通过 `--prerelease --latest=false` 发布，保留既有稳定版；发布说明须列清楚未完成的实机验收，不能把候选版称为整体阶段已验收。
+
 6. 检查 GitHub Actions 和公开标签安装地址实际可用，再从远端固定标签做一次临时目录安装。若失败，先修复再发布新版本，不覆盖已有版本标签或附件。
 
 GitHub Actions 使用官方托管 runner 的 GitHub CLI 和限于当前仓库的 `GITHUB_TOKEN`，不需要将个人 token 放进仓库。使用说明见 [GitHub 官方文档](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-github-cli)。

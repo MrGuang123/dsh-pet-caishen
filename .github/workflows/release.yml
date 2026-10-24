@@ -31,4 +31,9 @@ jobs:
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" output/release/*.tgz output/release/SHA256SUMS --verify-tag --title "阿财 $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md
+        run: |
+          flags=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            flags+=(--prerelease --latest=false)
+          fi
+          gh release create "$GITHUB_REF_NAME" output/release/*.tgz output/release/SHA256SUMS --verify-tag --title "阿财 $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md "${flags[@]}"

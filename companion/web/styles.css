@@ -194,15 +194,16 @@ button:disabled {
   fill:currentColor
 }
 .speech-bubble {
+  --bubble-max-height:calc(100vh - 32px);
   position:absolute;
   bottom:calc(100% + 8px);
   left:calc(50% + var(--overlay-shift-x, 0px));
   transform:translateX(-50%);
   width:max-content;
   max-width:min(270px,calc(100vw - 32px),var(--screen-content-width, 100vw));
-  padding:11px 14px;
+  max-height:var(--bubble-max-height);
   border:1px solid var(--line);
-  border-radius:13px 13px 13px 3px;
+  border-radius:13px;
   background:var(--paper);
   box-shadow:var(--shadow);
   font-size:12px;
@@ -210,17 +211,17 @@ button:disabled {
   z-index:5;
   animation:bubble-in .18s ease-out
 }
-.speech-bubble:after {
-  content:"";
-  position:absolute;
-  width:9px;
-  height:9px;
-  bottom:-6px;
-  left:46%;
-  border-right:1px solid var(--line);
-  border-bottom:1px solid var(--line);
-  background:var(--paper);
-  transform:rotate(45deg)
+/* Only long content scrolls; the rounded bubble itself stays fixed. */
+.speech-content {
+  max-height:calc(var(--bubble-max-height) - 2px);
+  padding:11px 14px;
+  border-radius:inherit;
+  overflow-y:auto;
+  overscroll-behavior:contain
+}
+.speech-content:focus-visible {
+  outline:2px solid var(--gold);
+  outline-offset:-3px
 }
 #bubble-text {
   display:block;
@@ -824,7 +825,9 @@ body.preview {
   }
   .speech-bubble {
     bottom:calc(100% + 3px);
-    font-size:11px;
+    font-size:11px
+  }
+  .speech-content {
     padding:8px 11px
   }
   .settings {
@@ -1067,3 +1070,42 @@ body.preview {
     translate:0 0
   }
 }
+
+/* Current-stage controls share the paper/ink palette with the existing panels. */
+.setting-select{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;margin:12px 0}
+select{font:inherit;color:var(--ink);background:var(--paper-deep);border:1px solid var(--line);border-radius:6px;min-height:32px;max-width:155px}
+.snooze-row{display:flex;align-items:center;gap:8px;font-size:11px}.snooze-row button,.utility-actions button,#reset-shortcut,#copy-diagnostics,#task-details,#help-close,#bubble-dismiss{font:inherit;color:var(--red);border:1px solid var(--line);border-radius:7px;background:var(--paper-deep);padding:6px 8px;min-height:32px}
+.utility-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}.utility-actions button{font-size:11px}
+.setting-hint{font-size:11px;line-height:1.5;color:var(--muted)}
+#diagnostic-text{font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;-webkit-user-select:text}
+.round-button{width:32px;height:32px}.pet-tools{right:-12px}.close-button{width:32px;height:32px}
+#bubble-text{white-space:pre-line}#bubble-dismiss{display:block;font-size:11px;margin-top:5px}
+#task-count{font-size:10px;color:var(--muted);max-width:112px;white-space:normal}
+.tasks{bottom:38px;max-height:calc(100vh - 70px)}.task-row{border-bottom:1px solid var(--line);padding:8px 0;display:flex;gap:5px;align-items:center}.task-row button{border:0;border-radius:6px;background:transparent;text-align:left;color:var(--ink);font-size:11px;min-height:32px;padding:5px}.task-row button:first-child{flex:1;min-width:0}.task-row button:hover{background:var(--paper-deep)}.task-row strong,.task-row span{display:block;overflow-wrap:anywhere}.task-row span{font-size:11px;color:var(--muted);margin-top:4px}.task-row button:last-child:not(:first-child){color:var(--red);flex:none;width:42px}
+.onboarding{z-index:25;font-size:12px;bottom:calc(100% + 4px)}#help-close{margin-top:8px}
+.mini:not(.pet-hover):not(:focus-within):not(.menu-open):not(.important) .status-badge{opacity:0;visibility:hidden;pointer-events:none}
+.mini:not(.pet-hover):not(:focus-within) .status-badge{font-size:10px;padding:4px 8px}
+.position-locked .pet{cursor:pointer}
+.large-text .status-badge{font-size:13px}.large-text .speech-bubble{font-size:14px}.large-text .settings{font-size:13px}.large-text .settings label,.large-text .switch-row,.large-text .task-row button,.large-text .task-row span{font-size:13px}.large-text .settings-heading span{font-size:12px}
+.suspended *{animation-play-state:paused!important}.suspended .coin-pop{display:none}
+.reduced-motion .pet-tools,.reduced-motion .switch,.reduced-motion .switch:before{transition:none!important}
+@media(prefers-reduced-motion:reduce){.coin-pop{animation:coin-fade .35s ease-out forwards}}
+/* Each state is legible without animation. */
+.face-waiting,.face-blocked{display:none}
+[data-business=waiting] .face-waiting,[data-business=blocked] .face-blocked{display:block}
+[data-business=waiting] .base-brows,[data-business=blocked] .base-brows,[data-business=blocked] .smile,[data-business=blocked] .smile-teeth{display:none}
+[data-state=ready] .acai-head,[data-state=ready] .sparkles{animation:none}
+.celebrating[data-state=ready] .acai-head{animation:thank-you 1.6s ease-in-out 1}
+.celebrating[data-state=ready] .sparkles{animation:sparkle 1.6s ease-in-out 1}
+[data-state=running] .acai-head{animation:none;transform:rotate(1deg)}
+[data-state=waiting] .hat-wings{animation:hat-wiggle 9s ease-in-out infinite}
+.acai-head{animation:head-idle 12s ease-in-out infinite}.beard{animation:none}
+@keyframes head-idle{0%,65%,100%{transform:rotate(0)}75%,85%{transform:rotate(2deg)}}
+@keyframes typing{0%,60%,100%{transform:translateY(1px) rotate(2deg)}30%{transform:translateY(-3px) rotate(-2deg)}}
+ .small-pet .character svg .eye-detail{display:none}
+.small-pet .character svg .fine-detail{opacity:.35}
+.status-badge{min-height:32px}input[type=range]{height:32px}.switch-row{min-height:36px}button:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+[data-state=pet][data-gesture=hat] .arm-right{animation:none;transform:translate(-5px,-42px) rotate(-24deg)}
+[data-state=pet][data-gesture=hat] .hat{transform-origin:160px 110px;animation:hat-wiggle 1.2s ease-in-out 1}
+[data-state=pet][data-gesture=stretch] .arm-left{animation:none;transform:rotate(25deg)}
+[data-state=pet][data-gesture=stretch] .arm-right{animation:none;transform:rotate(-25deg)}

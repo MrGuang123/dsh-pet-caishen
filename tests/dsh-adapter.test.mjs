@@ -63,7 +63,7 @@ test("completed is ready only when driver stops, and acknowledgement clears the 
 	f.emit("agent/status", { agent: f.root, status: "idle" });
 	assert.equal(f.status(), "ready");
 	assert.match(f.rows.get("root").detail, /本轮结束/);
-	f.adapter.acknowledge("root");
+	f.adapter.acknowledge("root", f.rows.get("root").completion.id);
 	assert.equal(f.status(), "idle");
 });
 
@@ -335,4 +335,20 @@ test("a compatible theme owns the single fortune control, including late enable 
 	f.window.dispatchEvent(new Event("dsh-theme-caishen:status-host"));
 	assert.equal(f.controls[0](), null);
 	f.dispose();
+});
+
+test('old acknowledgement and title updates cannot erase a later completion or an error', t => {
+  const f = fixture(); t.after(f.adapter.dispose);
+  f.event('turn/start'); f.event('turn/end', { reason: { kind: 'completed' } });
+  f.emit('agent/status', { agent: f.root, status: 'idle' });
+  const first = f.rows.get('root').completion.id;
+  for (const listener of f.changes) listener(f.root.session, 'title', '新名字');
+  assert.equal(f.rows.get('root').completion.id, first);
+  f.event('turn/start'); f.event('turn/end', { reason: { kind: 'completed' } });
+  f.emit('agent/status', { agent: f.root, status: 'idle' });
+  assert.equal(f.adapter.acknowledge('root', first), false);
+  assert.equal(f.status(), 'ready');
+  f.event('turn/start'); f.emit('agent/error', { agent: f.root });
+  assert.equal(f.adapter.acknowledge('root', first), false);
+  assert.equal(f.status(), 'blocked');
 });

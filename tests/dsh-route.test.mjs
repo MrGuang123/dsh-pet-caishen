@@ -60,3 +60,16 @@ test("the client can remember a selected historical chat without a live root or 
   assert.equal(invalid.result.status, 400);
   assert.equal(store.getLastSessionId(), "history-chat");
 });
+
+test('navigation acknowledgement captures the expected completion and focus needs explicit evidence', async () => {
+  const acknowledgements = [];
+  const command = { id:'nav', sessionId:'a', expectedCompletionId:'first', expiresAt:Date.now()+1000 };
+  const store = createStateStore({ mode:'demo' });
+  const handler = createDshHandler({ desktop:{}, navigation:{ peek:()=>command, acknowledge:()=>true }, adapter:{ acknowledge:(...args)=>acknowledgements.push(args) }, store });
+  await handler(request({type:'navigation-ack',id:'nav',sessionId:'a'}), response());
+  assert.deepEqual(acknowledgements, [['a','first']]);
+  await handler(request({type:'client-focus',clientId:'ui',sessionId:'a'}), response());
+  assert.equal(acknowledgements.length, 1);
+  await handler(request({type:'client-focus',clientId:'ui',sessionId:'a',observedCompletionId:'second'}), response());
+  assert.deepEqual(acknowledgements.at(-1), ['a','second']);
+});

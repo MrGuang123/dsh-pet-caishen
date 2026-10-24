@@ -6,13 +6,14 @@ import Foundation
 import WebKit
 
 // Keep in sync with NATIVE_PROTOCOL in lib/desktop.js.
-let companionProtocol = 3
+let companionProtocol = 4
 
 // macOS 13+; the web renderer and authenticated loopback server are owned by DSH.
 struct LaunchConfiguration: Decodable {
     let launchURL: String
     let baseURL: String
     let parentPID: Int32
+    var instanceId: String? = nil
 
     var entryURL: URL { URL(string: launchURL)! }
     var originURL: URL { URL(string: baseURL)! }
@@ -32,6 +33,7 @@ struct LaunchConfiguration: Decodable {
     }
 
     func validated() throws -> Self {
+        if let value = instanceId, value.range(of: "^[a-zA-Z0-9-]{1,64}$", options: .regularExpression) == nil { throw ConfigurationError.invalid }
         guard let launch = Self.trustedURL(launchURL),
               let base = Self.trustedURL(baseURL),
               (base.path.isEmpty || base.path == "/"), base.query == nil,
@@ -105,11 +107,34 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private var healthFailures = 0
     private var hotKey: EventHotKeyRef?
     private var hotKeyHandler: EventHandlerRef?
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
+    private var positionLocked = false
+    private var dockEdge = false
+    private var shortcutKey: String? = "A"
+    private var shortcutItem: NSMenuItem!
+    private var recoveryAttempts = 0
+    private var rendererReady = false
+    private var readyTimer: Timer?
+    private var lastScreenBounds = ""
+    private var globalMouseMonitor: Any?
+    private var localMouseMonitor: Any?
+    private var sleeping = false
     private let positionKey = "AcaiWindowPosition"
 
     init(configuration: LaunchConfiguration) {
         self.configuration = configuration
+        defaults = configuration.instanceId.flatMap { UserDefaults(suiteName: "dev.dsh.pet.caishen." + $0) } ?? UserDefaults.standard
+        // Migrate only our own legacy geometry, never DSH profile content.
+        if configuration.instanceId != nil, defaults.dictionary(forKey: positionKey) == nil,
+           let legacy = UserDefaults.standard.dictionary(forKey: positionKey),
+           let x = legacy["x"] as? Double, let y = legacy["y"] as? Double, x.isFinite, y.isFinite {
+            var geometry: [String: Double] = ["x": x, "y": y]
+            if let left = legacy["contentLeft"] as? Double, let right = legacy["contentRight"] as? Double,
+               left.isFinite, right.isFinite, left >= 0, right <= 420, right > left {
+                geometry["contentLeft"] = left; geometry["contentRight"] = right
+            }
+            defaults.set(geometry, forKey: positionKey)
+        }
         // Restore the footprint before the first clamp, otherwise a saved
         // screen-edge position would be pulled inward by transparent padding.
         if let saved = defaults.dictionary(forKey: positionKey),
@@ -126,17 +151,16 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         registerShortcut()
         registerVisibilitySignals()
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
-        print("{\"type\":\"hello\",\"protocol\":\(companionProtocol)}")
+        let hello: [String: Any] = ["type": "hello", "protocol": companionProtocol, "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"]
+        if let data = try? JSONSerialization.data(withJSONObject: hello), let line = String(data: data, encoding: .utf8) { print(line) }
         fflush(stdout)
         show()
         webView.load(URLRequest(url: configuration.entryURL, cachePolicy: .reloadIgnoringLocalCacheData))
-        // Common modes keep the release guard running during AppKit tracking.
-        let pointerTimer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            self?.updateDrag()
-            self?.updatePointerPassthrough()
-        }
-        RunLoop.main.add(pointerTimer, forMode: .common)
-        mouseTimer = pointerTimer
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in self?.updatePointerPassthrough() }
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in self?.updatePointerPassthrough(); return event }
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
+        armReadyTimeout()
         lifecycleTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.checkParent() }
         healthTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in self?.checkHealth() }
         listenForCommands()
@@ -162,6 +186,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private func makeWindow() {
         panel = CompanionPanel(contentRect: NSRect(origin: initialOrigin(), size: viewport), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = "阿财"
+        panel.acceptsMouseMovedEvents = true
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         panel.backgroundColor = .clear
@@ -196,15 +221,19 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private func makeStatusMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "财"
-        statusItem.button?.toolTip = "阿财桌面宠物"
+        statusItem.button?.toolTip = "阿财桌面宠物" + (configuration.instanceId.map { " · " + String($0.suffix(4)) } ?? "")
         let menu = NSMenu()
         visibilityItem = menu.addItem(withTitle: "收起阿财", action: #selector(toggleVisibility), keyEquivalent: "")
         visibilityItem.target = self
         let open = menu.addItem(withTitle: "打开 DeepSeek Harness", action: #selector(openDSH), keyEquivalent: "")
         open.target = self
         menu.addItem(.separator())
-        let shortcut = menu.addItem(withTitle: "显示 / 收起：⌃⌥⌘A", action: nil, keyEquivalent: "")
-        shortcut.isEnabled = false
+        let reset = menu.addItem(withTitle: "移回当前屏幕", action: #selector(resetPosition), keyEquivalent: "")
+        reset.target = self
+        let retry = menu.addItem(withTitle: "重新加载阿财", action: #selector(retryRenderer), keyEquivalent: "")
+        retry.target = self
+        shortcutItem = menu.addItem(withTitle: "快捷键正在准备", action: nil, keyEquivalent: "")
+        shortcutItem.isEnabled = false
         menu.addItem(.separator())
         let quit = menu.addItem(withTitle: "退出阿财", action: #selector(quit), keyEquivalent: "")
         quit.target = self
@@ -218,6 +247,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private func show() {
         panel.setFrameOrigin(clampedOrigin(panel.frame.origin))
         panel.orderFrontRegardless()
+        reportPageVisibility()
         visibilityItem.title = "收起阿财"
         updatePointerPassthrough()
         reportVisibility()
@@ -237,6 +267,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private func hide() {
         finishDrag(cancelled: true)
         panel.orderOut(nil)
+        reportPageVisibility()
         visibilityItem.title = "唤回阿财"
         reportVisibility()
     }
@@ -260,6 +291,11 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func registerShortcut() {
+        if let hotKey { UnregisterEventHotKey(hotKey); self.hotKey = nil }
+        if let hotKeyHandler { RemoveEventHandler(hotKeyHandler); self.hotKeyHandler = nil }
+        guard let key = shortcutKey else { reportShortcut("disabled"); return }
+        let codes: [String: UInt32] = ["A":0,"B":11,"C":8,"D":2,"E":14,"F":3,"G":5,"H":4,"I":34,"J":38,"K":40,"L":37,"M":46,"N":45,"O":31,"P":35,"Q":12,"R":15,"S":1,"T":17,"U":32,"V":9,"W":13,"X":7,"Y":16,"Z":6]
+        guard let code = codes[key] else { reportShortcut("conflict"); return }
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let context = Unmanaged.passUnretained(self).toOpaque()
         let installed = InstallEventHandler(GetApplicationEventTarget(), { _, _, pointer in
@@ -268,13 +304,54 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
             DispatchQueue.main.async { delegate.toggleVisibility() }
             return noErr
         }, 1, &eventType, context, &hotKeyHandler)
-        guard installed == noErr else { return }
-        let identifier = EventHotKeyID(signature: 0x41434149, id: 1)
-        let modifiers = UInt32(controlKey | optionKey | cmdKey)
-        let registered = RegisterEventHotKey(UInt32(kVK_ANSI_A), modifiers, identifier, GetApplicationEventTarget(), 0, &hotKey)
-        if registered != noErr {
-            fputs("Acai: global shortcut is unavailable; use the menu bar.\n", stderr)
-        }
+        guard installed == noErr else { reportShortcut("conflict"); return }
+        let registered = RegisterEventHotKey(code, UInt32(controlKey | optionKey | cmdKey), EventHotKeyID(signature: 0x41434149, id: 1), GetApplicationEventTarget(), 0, &hotKey)
+        reportShortcut(registered == noErr ? "registered" : "conflict")
+    }
+
+    private func reportShortcut(_ state: String) {
+        shortcutItem?.title = state == "registered" ? "显示 / 收起：⌃⌥⌘" + (shortcutKey ?? "") : state == "disabled" ? "快捷键已停用" : "快捷键冲突，请在设置中更换"
+        print("{\"type\":\"shortcut\",\"state\":\"\(state)\"}"); fflush(stdout)
+        webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('acai-shortcut',{detail:'\(state)'}))") { _, _ in }
+    }
+
+    @objc private func resetPosition() {
+        finishDrag(cancelled: true)
+        let point = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }) ?? NSScreen.main
+        guard let screen else { return }
+        panel.setFrameOrigin(clampedOrigin(NSPoint(x: screen.visibleFrame.maxX - viewport.width - 20, y: screen.visibleFrame.minY + 16)))
+        savePosition(); show()
+    }
+    private func reportPageVisibility() {
+        webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('acai-visibility',{detail:\(panel.isVisible && !sleeping)}))") { _, _ in }
+    }
+    private func reportRenderer(_ ready: Bool) {
+        rendererReady = ready
+        print("{\"type\":\"renderer\",\"ready\":\(ready)}"); fflush(stdout)
+    }
+    private func armReadyTimeout() {
+        readyTimer?.invalidate()
+        readyTimer = Timer.scheduledTimer(withTimeInterval: 12, repeats: false) { [weak self] _ in if self?.rendererReady == false { self?.recoverRenderer() } }
+    }
+    private func recoverRenderer() {
+        reportRenderer(false); finishDrag(cancelled: true); hitZones = []; panel.ignoresMouseEvents = true
+        readyTimer?.invalidate()
+        guard recoveryAttempts < 2 else { return }
+        recoveryAttempts += 1
+        webView.load(URLRequest(url: configuration.entryURL, cachePolicy: .reloadIgnoringLocalCacheData)); armReadyTimeout()
+    }
+    @objc private func retryRenderer() { recoveryAttempts = 0; recoverRenderer(); show() }
+    @objc private func willSleep() { sleeping = true; finishDrag(cancelled: true); reportPageVisibility() }
+    @objc private func didWake() { sleeping = false; screensChanged(); reportPageVisibility() }
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { recoverRenderer() }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { recoverRenderer() }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { if (error as NSError).code != NSURLErrorCancelled { recoverRenderer() } }
+
+    private func startDragTimer() {
+        mouseTimer?.invalidate()
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in self?.updateDrag() }
+        RunLoop.main.add(timer, forMode: .common); mouseTimer = timer
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -283,11 +360,26 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
               let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         switch type {
         case "ready":
+            readyTimer?.invalidate(); reportRenderer(true); reportPageVisibility()
+            registerShortcut()
             updatePointerPassthrough()
+            // A new document needs the bounds even when the window has not moved.
+            lastScreenBounds = ""
             reportScreenBounds()
+        case "settings":
+            guard let locked = body["positionLocked"] as? Bool, let dock = body["dockEdge"] as? Bool else { return }
+            positionLocked = locked; dockEdge = dock
+            guard body.keys.contains("shortcutKey"), body["shortcutKey"] is String || body["shortcutKey"] is NSNull else { return }
+            let nextKey = body["shortcutKey"] as? String
+            guard nextKey == nil || (nextKey!.count == 1 && nextKey!.range(of: "^[A-Z]$", options: .regularExpression) != nil) else { return }
+            if shortcutKey != nextKey { shortcutKey = nextKey; registerShortcut() }
+            if locked { finishDrag(cancelled: true) }
+        case "reset-position": resetPosition()
+        case "retry-renderer": retryRenderer()
         case "drag-bounds":
             guard let left = finiteNumber(body["left"]), let right = finiteNumber(body["right"]),
                   left >= 0, right <= viewport.width, right > left else { return }
+            if dragLeft == left && dragRight == right { return }
             dragLeft = left
             dragRight = right
             if drag != nil { updateDrag() }
@@ -305,10 +397,11 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
             }.filter { !$0.isEmpty }
             updatePointerPassthrough()
         case "drag-start":
-            guard let id = dragID(body["id"]), panel.isVisible else { return }
+            guard let id = dragID(body["id"]), panel.isVisible, !positionLocked, !sleeping else { return }
             finishDrag(cancelled: true)
             drag = CompanionDrag(id: id, mouseStart: NSEvent.mouseLocation, windowStart: panel.frame.origin)
             panel.ignoresMouseEvents = false
+            startDragTimer()
             updateDrag()
         case "drag-end":
             guard let id = dragID(body["id"]), drag?.id == id,
@@ -366,6 +459,15 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         if !cancelled { applyDragPosition() }
         guard let gesture = drag else { return }
         drag = nil
+        mouseTimer?.invalidate(); mouseTimer = nil
+        if dockEdge && !cancelled && gesture.moved {
+            let screen = NSScreen.screens.first(where: { $0.visibleFrame.intersects(panel.frame) }) ?? NSScreen.main
+            if let screen {
+                let mid = panel.frame.minX + (dragLeft + dragRight) / 2
+                let x = mid < screen.visibleFrame.midX ? screen.visibleFrame.minX - dragLeft + 8 : screen.visibleFrame.maxX - dragRight - 8
+                panel.setFrameOrigin(clampedOrigin(NSPoint(x: x, y: panel.frame.minY)))
+            }
+        }
         reportDrag(gesture, phase: "end", cancelled: cancelled)
         savePosition()
         updatePointerPassthrough()
@@ -382,7 +484,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     }
 
     func windowDidMove(_ notification: Notification) {
-        savePosition()
+        if drag == nil { savePosition() }
         reportScreenBounds()
     }
 
@@ -425,6 +527,8 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         let left = max(0, screen.visibleFrame.minX - panel.frame.minX)
         let right = min(viewport.width, screen.visibleFrame.maxX - panel.frame.minX)
         let script = "window.dispatchEvent(new CustomEvent('acai-screen',{detail:{left:\(left),right:\(right)}}))"
+        let key = "\(left):\(right)"
+        guard key != lastScreenBounds else { return }; lastScreenBounds = key
         webView.evaluateJavaScript(script) { _, _ in }
     }
 
@@ -475,6 +579,10 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? { nil }
 
     func applicationWillTerminate(_ notification: Notification) {
+        readyTimer?.invalidate()
+        if let globalMouseMonitor { NSEvent.removeMonitor(globalMouseMonitor) }
+        if let localMouseMonitor { NSEvent.removeMonitor(localMouseMonitor) }
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         mouseTimer?.invalidate()
         lifecycleTimer?.invalidate()
         healthTimer?.invalidate()
