@@ -2,7 +2,7 @@
 
 ## 路线
 
-当前本机 DSH 为 `0.2.1-rc.2`，桌面产品 API 没有提供通用 companion 窗口。因此采用插件加轻量 macOS 伴随程序，保留官方 DSH 安装，不修改 App 包、不依赖社区 Fork。
+当前本机 DSH 为 `0.2.1-rc.5`，桌面产品 API 没有提供通用 companion 窗口。因此采用插件加轻量 macOS 伴随程序，保留官方 DSH 安装，不修改 App 包、不依赖社区 Fork。
 
 ```text
 dsh-pet-caishen/
@@ -53,7 +53,7 @@ DSH 宿主通过 agent/status、agent/error、turn/end 及用户问题投影同�
 
 ## 依据
 
-- 本机 `DeepSeek Harness.app` 的 `0.2.1-rc.2` 已安装源码。
+- 本机 `DeepSeek Harness.app` 的 `0.2.1-rc.5` 已安装源码，desktop build commit `d4db512a969fccf0c5cc7ec8fe38e9c1d27af916`。
 - [官方 Desktop product API](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/src/ipc.ts)。
 - [社区 dsh-pet 桌面宿主限制](https://github.com/Luv061211/dsh-pet#readme)。
 

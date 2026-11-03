@@ -54,7 +54,7 @@ lib/client/
 
 ## DSH 契约
 
-当前实际核对版本 `0.2.1-rc.2`，本机 desktop build commit 为 `332895e0f7c9d4dbfb29729f5eb367fa263ff986`。客户端不是另一份 React bundle，而是使用宿主 `window.__ModuleLoader__` 和宿主 React。
+当前实际核对版本 `0.2.1-rc.5`，本机 desktop build commit 为 `d4db512a969fccf0c5cc7ec8fe38e9c1d27af916`；`engines.dsh` 为 `>=0.2.1-rc.5 <0.2.2-0`。客户端不是另一份 React bundle，而是使用宿主 `window.__ModuleLoader__` 和宿主 React。
 
 服务：`agents`、`sessionProjections`；状态事件：`agent/status`、`agent/error`、`session/event`。投影只读 `title` 和 `userQuestions`。审批与问题 waterfall observer 始终将 `next()` 原值／错误透明传回，绝不回答、批准或改写任务。
 

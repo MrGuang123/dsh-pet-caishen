@@ -1,5 +1,24 @@
 # 验证记录
 
+## 2026-11-03 · 0.2.0-rc.2 DSH 0.2.1-rc.5 兼容修复
+
+现象：DSH 从 `0.2.1-rc.2` 升级到 `0.2.1-rc.5` 后，插件页的「已安装插件」把 `dsh-pet-caishen` 与 `dsh-theme-caishen` 都标为「异常」。核对安装版 `app.asar`：`evaluatePluginCompatibility` 使用 `semver.satisfies(runtime, engines.dsh, { includePrerelease: true })`；阿财的精确 `engines.dsh: 0.2.1-rc.2` 对 rc.5 不成立，`loadProfileDirectory` 因而把整个 bundle 记入 `skippedBundles`。财神主题 `0.2.2` 已把范围改为 `>=0.2.1-rc.5 <0.2.2-0`，同样配置下不再被跳过。
+
+本轮改动与验证：
+
+| 验证层 | 实际结果与边界 |
+| --- | --- |
+| 兼容判定 | `engines.dsh` 改为 `>=0.2.1-rc.5 <0.2.2-0`；用安装版 semver 复核 rc.5 满足、旧精确范围不满足 |
+| 离线契约核对 | 从 rc.5 `app.asar` 读取源码，确认 `agents`、`sessionProjections` 服务，`agent/status`、`agent/error`、`session/event` 事件，`approval/request`、`user-questions/request` waterfall，`title`／`userQuestions` 投影，以及客户端 `sessions`、`uiSession`、`uiWorkspace`、`slots` 和两个会话插槽仍然存在；没有修改投影或桥接协议 |
+| 组合检查 | 隔离 profile 执行 `dsh --profile test --dump-config`：修复前明确输出 `skipping profile bundle "dsh-pet-caishen"`，修复后组合树包含 `dsh-theme-caishen` 与 `dsh-pet-caishen` 两行，无跳过告警 |
+| 隔离真实运行库 | DSH `0.2.1-rc.5` 隔离 profile 实际启动 `dsh web`（`autoLaunch: false`、临时 `stateDirectory`）：插件 Host `apply` 未报错，首页组合 bundle 返回 200 且同时含两个插件客户端模块，`GET /pet-caishen/bridge` 以同源头返回 200 与预期桌面状态 |
+| 自动检查 | `npm run check` 通过：客户端生成物一致、原生 0.2.0-rc.2 双架构摘要、42 个 JS 文件语法／宿主 import／插件身份／locale；`npm test` 87/87 |
+| 分发程序 | `npm run prepare:native` 重建 arm64 + x86_64、macOS 13 最低目标、ad-hoc 签名；`native/manifest.json` 与 Info.plist 均为 0.2.0-rc.2；`npm run check:package` 通过（64 个文件，851,090 字节），`npm run check:install` 通过干净打包安装、原生选择与签名校验 |
+
+未覆盖：真实桌面窗口与完整 DSH 界面点击流程、真实任务端到端导航、Intel 实机、多屏／全屏 Space、连续拖动／穿透／快捷键、VoiceOver、睡眠唤醒。隔离 web 启动与 HTTP 200 不能替代这些实机验收；本次未修改已安装 DSH App、日常 profile 或财神主题。
+
+升级后需要完全退出并重新打开 DSH，宿主的组合与跳过结果才会重新计算；仅刷新浏览器页面不会重载被跳过的 bundle。
+
 ## 2026-10-24 · 0.2.0-rc.1 预发布候选
 
 气泡修复及本轮功能代码检查完成；整体 2D 阶段的实机验收仍有缺口，因此采用预发布版本，不将 S7／R16 标记为全部完成。本节仅记录已执行的发布前验证，远端发布结果以 GitHub Release 为准。

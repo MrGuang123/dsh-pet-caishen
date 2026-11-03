@@ -4,7 +4,7 @@
 
 中文名为「阿财」，拼音标识为 `acai`，英文显示名为 **Acai**。
 
-项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前预发布版本 **0.2.0-rc.1**，适配 **DSH 0.2.1-rc.2、macOS 13+**。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；其它 DSH 版本未验证。
+项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前预发布版本 **0.2.0-rc.2**，适配 **DSH 0.2.1-rc.5、macOS 13+**。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；其它 DSH 版本未验证。
 
 ![阿财当前形象 · 空闲状态演示](docs/screenshots/acai-preview.png)
 
@@ -33,6 +33,10 @@
 
 本版为预发布，整体 2D 阶段尚未完成全部实机验收；完整 DSH 界面流程、Intel、多屏、连续拖动等边界见 [验证记录](docs/VALIDATION.md)。既有稳定版仍为 0.1.0。
 
+### DSH 0.2.1-rc.5 兼容修复
+
+DSH 升级到 `0.2.1-rc.5` 后，旧的精确 `engines.dsh: 0.2.1-rc.2` 会让宿主把阿财整体判定为不兼容并在插件页显示「异常」。本版把兼容范围改为 `>=0.2.1-rc.5 <0.2.2-0`，按 rc.5 的实际 Host 服务、事件和客户端注入重新核对；原生协议与数据格式不变。升级后需完全退出并重新打开 DSH，插件页才会按新组合重新加载。
+
 ## 安装
 
 ### 从 GitHub 安装到 DSH
@@ -41,7 +45,7 @@
 2. 填写以下完整地址，点击「安装」：
 
    ```text
-   git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.1
+   git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.2
    ```
 
 3. 安装完成后点击「立即启用」，按 DSH 提示刷新或完全退出后重启。
@@ -49,12 +53,12 @@
 
 GitHub 地址必须能从本机访问；切换 npm 镜像不能替代 GitHub 下载。DSH 的安装方式见 [官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md)。
 
-也可以在 [Releases](https://github.com/MrGuang123/dsh-pet-caishen/releases) 下载 `dsh-pet-caishen-0.2.0-rc.1.tgz`，在「添加插件」中填写该文件的绝对路径。Release 同时提供 `SHA256SUMS`。GitHub 自动生成的源码 ZIP 解压后，也可填写插件目录的绝对路径。
+也可以在 [Releases](https://github.com/MrGuang123/dsh-pet-caishen/releases) 下载 `dsh-pet-caishen-0.2.0-rc.2.tgz`，在「添加插件」中填写该文件的绝对路径。Release 同时提供 `SHA256SUMS`。GitHub 自动生成的源码 ZIP 解压后，也可填写插件目录的绝对路径。
 
 使用已配置 CLI profile 的用户可以运行：
 
 ```bash
-dsh plugin --profile web add 'git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.1'
+dsh plugin --profile web add 'git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.2'
 ```
 
 将 `web` 换成实际的 CLI profile 名称；桌面端用户建议直接使用插件页面。

@@ -1,6 +1,6 @@
 {
   "name": "dsh-pet-caishen",
-  "version": "0.2.0-rc.1",
+  "version": "0.2.0-rc.2",
   "private": true,
   "description": "阿财：配套财神主题、可跨应用悬浮的 DSH 工作伙伴",
   "author": "MrGuang123",
@@ -11,7 +11,7 @@
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
-  "engines": { "node": ">=22", "dsh": "0.2.1-rc.2" },
+  "engines": { "node": ">=22", "dsh": ">=0.2.1-rc.5 <0.2.2-0" },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build:client": "node scripts/build-client.mjs",
