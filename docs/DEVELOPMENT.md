@@ -54,13 +54,13 @@ lib/client/
 
 ## DSH 契约
 
-当前实际核对版本 `0.2.1-rc.5`，本机 desktop build commit 为 `d4db512a969fccf0c5cc7ec8fe38e9c1d27af916`；`engines.dsh` 为 `>=0.2.1-rc.5 <0.2.2-0`。客户端不是另一份 React bundle，而是使用宿主 `window.__ModuleLoader__` 和宿主 React。
+当前实际核对版本 `0.2.2-rc.1`（并复核 `0.2.1-rc.5` 契约一致），release tag commit 为 `66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db`；`engines.dsh` 为 `>=0.2.1-rc.5 <0.3.0-0`。`npm run check` 会拒绝只覆盖单个 rc 的范围。客户端不是另一份 React bundle，而是使用宿主 `window.__ModuleLoader__` 和宿主 React。
 
 服务：`agents`、`sessionProjections`；状态事件：`agent/status`、`agent/error`、`session/event`。投影只读 `title` 和 `userQuestions`。审批与问题 waterfall observer 始终将 `next()` 原值／错误透明传回，绝不回答、批准或改写任务。
 
 客户端注入 `sessions`、`uiSession`、`uiWorkspace`、`slots`。导航为 `ctx.uiWorkspace.openSession(id)`；前端使用 `sessionStatus` 补充已存在的 pending interaction，补充事实有独立过期时间，不决定宿主连接状态。
 
-修改适配器时，不以 DOM class、页面文字或浏览器内外观来推测任务状态。DSH 升级后重新检查这些契约，不直接扩大 engines 范围。
+修改适配器时，不以 DOM class、页面文字或浏览器内外观来推测任务状态。DSH 升级后先重新检查这些契约，再按整条 0.2.x 保持或调整上界；只有契约确实变化才迁移或收窄，不按单个 rc 钉死，也不把未核对的更大范围直接写进 `engines.dsh`。
 
 ## 分发
 

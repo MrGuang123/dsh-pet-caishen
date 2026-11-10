@@ -1,5 +1,25 @@
 # 验证记录
 
+## 2026-11-11 · 0.2.0-rc.3 DSH 0.2.2-rc.1 兼容修复
+
+现象：DSH 从 `0.2.1-rc.5` 升级到 `0.2.2-rc.1` 后，插件页再次把 `dsh-pet-caishen` 标为「异常」。核对安装版 `app.asar`：`evaluatePluginCompatibility` 仍用 `semver.satisfies(runtime, engines.dsh, { includePrerelease: true })`；旧范围 `>=0.2.1-rc.5 <0.2.2-0` 的上界 `0.2.2-0` 低于预发布 `0.2.2-rc.1`，`loadProfileDirectory` 因而把整个 bundle 记入 `skippedBundles`。这不是 Host 服务或客户端插槽失效，而是版本范围写得太窄。
+
+本轮改动与验证：
+
+| 验证层 | 实际结果与边界 |
+| --- | --- |
+| 兼容判定 | `engines.dsh` 改为 `>=0.2.1-rc.5 <0.3.0-0`，覆盖整条 0.2.x；用安装版同款 semver 复核 `0.2.2-rc.1` 满足、旧范围不满足。`npm run check` 新增范围守卫，拒绝只覆盖单个 rc 的写法 |
+| 源码契约核对 | 同时读取安装版 `0.2.2-rc.1` 与 npm `0.2.1-rc.5` 包：`agents`／`sessionProjections` 服务、`agent/status`／`agent/error`／`session/event` 事件、`title`／`userQuestions` 投影、审批／提问 waterfall 的 `next()` 透传、客户端 `sessions`／`uiSession`／`uiWorkspace`／`slots` 注入、`openSession`／`retainInfo`／`sessionStatus` 与会话插槽均保持同一契约；未改状态投影或桥接协议 |
+| 组合检查 | 隔离 profile（`build/compat022`，仅 base／web-app／阿财）执行 `dsh --profile test --dump-config`：修复前明确输出 `skipping profile bundle "dsh-pet-caishen"`；修复后组合树包含 `pet-caishen` 且无跳过告警 |
+| 隔离真实运行库 | DSH `0.2.2-rc.1` 隔离 profile 实际启动 `dsh web`（`autoLaunch: false`、临时 `stateDirectory`、端口 53991）：插件 Host `apply` 未报错；首页 boot graph 含 `dsh-pet-caishen` 客户端条目；`GET /pet-caishen/bridge` 以同源头返回 200 和预期桌面状态 |
+| 浏览器加载 | 真实 Chromium 156（headless，独立 user-data-dir）加载同一页面：插件客户端工厂执行，`window.__DSH_ACAI_COMPANION_V1__` 存在，注入 `dsh-pet-caishen:fortune`／`fortune-status` 样式，首页显示「财运正在路上」，桥接轮询 `error` 为空；无未捕获异常、控制台错误或失败请求。证据：`output/compat-022/browser.json`、`browser.png`（忽略目录） |
+| 自动检查 | `npm run check` 通过（客户端生成物一致、原生 0.2.0-rc.3 双架构摘要、42 个 JS 文件语法／宿主 import／身份／范围／locale）；`npm test` 87/87；`npm run check:package` 通过（64 个文件）；`npm run check:install` 通过干净打包安装、原生选择、`--check-config` 与签名校验 |
+| 分发程序 | `npm run prepare:native` 重建 arm64 + x86_64、macOS 13 最低目标、ad-hoc 签名；`native/manifest.json` 与 Info.plist 均为 0.2.0-rc.3；Native 握手仍为 4、状态协议仍为 2 |
+
+未覆盖：本轮没有重新打开原生窗口做人工交互，也没有在真实 DSH 插件管理页执行安装／启停，或运行真实任务。浏览器加载与隔离 web 启动不能替代原生窗口、完整 DSH 界面和日常安装验收。未修改已安装 DSH App、日常 profile 或同级财神主题；同级主题若仍声明旧范围，会被宿主单独跳过，需在其仓库另行放宽。
+
+升级后需要完全退出并重新打开 DSH，宿主的组合与跳过结果才会重新计算；仅刷新浏览器页面不会重载被跳过的 bundle。
+
 ## 2026-11-03 · 0.2.0-rc.2 DSH 0.2.1-rc.5 兼容修复
 
 现象：DSH 从 `0.2.1-rc.2` 升级到 `0.2.1-rc.5` 后，插件页的「已安装插件」把 `dsh-pet-caishen` 与 `dsh-theme-caishen` 都标为「异常」。核对安装版 `app.asar`：`evaluatePluginCompatibility` 使用 `semver.satisfies(runtime, engines.dsh, { includePrerelease: true })`；阿财的精确 `engines.dsh: 0.2.1-rc.2` 对 rc.5 不成立，`loadProfileDirectory` 因而把整个 bundle 记入 `skippedBundles`。财神主题 `0.2.2` 已把范围改为 `>=0.2.1-rc.5 <0.2.2-0`，同样配置下不再被跳过。

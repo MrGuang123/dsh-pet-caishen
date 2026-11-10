@@ -2,7 +2,7 @@
 
 整理日期：2026-10-22。本文记录本轮讨论确认的当前阶段目标；产品范围以 [PRODUCT.md](PRODUCT.md) 为准，实现顺序见 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
-本文是需求基线；2026-10-23 工作树已实现以下条目，均保留验收状态，具体证据与未完成专项见 [VALIDATION.md](VALIDATION.md) 和实施计划进度表。实现不等于发布或全部实机验收。目标 DSH 为 `0.2.1-rc.5`、macOS 13 及以上；不扩大平台承诺。
+本文是需求基线；2026-10-23 工作树已实现以下条目，均保留验收状态，具体证据与未完成专项见 [VALIDATION.md](VALIDATION.md) 和实施计划进度表。实现不等于发布或全部实机验收。目标 DSH 为 `0.2.2-rc.1`、macOS 13 及以上；`engines.dsh` 覆盖 `0.2.1-rc.5` 起的整条 0.2.x，不扩大平台承诺。
 
 ## 已有基础与本轮增量
 
