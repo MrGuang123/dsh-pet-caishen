@@ -2,7 +2,7 @@
 
 ## 路线
 
-当前本机 DSH 为 `0.2.2-rc.1`（已验证与 `0.2.1-rc.5` 共用同一组插件契约），桌面产品 API 没有提供通用 companion 窗口。因此采用插件加轻量 macOS 伴随程序，保留官方 DSH 安装，不修改 App 包、不依赖社区 Fork。
+当前本机 DSH 为 `0.2.2-rc.2`（已验证与 `0.2.1-rc.5` 共用同一组插件契约），桌面产品 API 没有提供通用 companion 窗口。因此采用插件加轻量 macOS 伴随程序，保留官方 DSH 安装，不修改 App 包、不依赖社区 Fork。
 
 ```text
 dsh-pet-caishen/
@@ -39,7 +39,7 @@ DSH 宿主通过 agent/status、agent/error、turn/end 及用户问题投影同�
 - 功德金币：客户端在文档级监听主题 `.caishen-merit` 点击，POST `animate/coin`；宿主仅在宠物真实可见时把命令写入原生 stdin，原生转发给网页播放一次性动画。
 - 财运开关：主题未声明 `__DSH_CAISHEN_STATUS_V1__` 时由客户端渲染。为避免与主题静态状态胶囊并排显示，客户端注入 `data-plugin-css="dsh-pet-caishen:fortune-status"` 的窄作用域样式；主题声明接管后立即移除，改由主题渲染唯一的开关。
 - Companion HTTP：只绑定 `127.0.0.1`，随机端口、随机凭证。登录凭证只传给子进程，登录后换为 HttpOnly、SameSite=Strict cookie。
-- `GET /api/state` 返回协议 v1 状态与偏好；`POST /api/preferences` 写入校验后的偏好；`POST /api/action` 仅允许求签、互动、导航。
+- `GET /api/state` 返回协议 v2 状态与偏好；`POST /api/preferences` 写入校验后的偏好；`POST /api/action` 仅允许求签、互动、导航。
 - 修改请求必须携带 `X-Acai-Client: companion-v1` 和同源 Origin。浏览器演示额外开放 `/api/demo`，真实 DSH 模式拒绝模拟状态。
 - 原生桥只接受固定的拖动、隐藏、hit zones 等消息，禁止网页发起任意外链或执行命令。
 
@@ -53,7 +53,7 @@ DSH 宿主通过 agent/status、agent/error、turn/end 及用户问题投影同�
 
 ## 依据
 
-- 本机 `DeepSeek Harness.app` 的 `0.2.2-rc.1` 已安装源码；release tag commit `66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db`。
+- 本机 `DeepSeek Harness.app` 的 `0.2.2-rc.2` 已安装源码；本轮发布标签为 `v0.2.0-rc.4`。
 - [官方 Desktop product API](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/src/ipc.ts)。
 - [社区 dsh-pet 桌面宿主限制](https://github.com/Luv061211/dsh-pet#readme)。
 

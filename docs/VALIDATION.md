@@ -1,5 +1,40 @@
 # 验证记录
 
+## 2026-11-12 · 首次点击拖拽修复
+
+现象：阿财在其它应用前面时，第一次在宠物上按下不会开始拖动，必须先点一下面板，第二次才能拖动。核对安装版 WebKit：`WKWebView.acceptsFirstMouse` 只有在页面可开始拖拽或可旧式滚动时才返回 true；阿财的 `#pet` 声明了 `-webkit-user-drag:none`，页面也没有可滚动内容，默认返回 false。非激活 `NSPanel` 因而吞掉第一次 mouseDown，renderer 收不到启动拖拽所需的 pointerdown。
+
+修复：`CompanionWebView` 覆盖 `acceptsFirstMouse` 返回 true，让非激活面板的第一次按下直接交给页面，不主动激活应用；可见期间以 10Hz 轮询真实光标位置更新 hit-zone 穿透，隐藏或睡眠时停止。原生消息、握手与拖动坐标算法未变。
+
+| 验证层 | 实际结果与边界 |
+| --- | --- |
+| 源码契约 | 安装版 WebKit `WebViewImpl::acceptsFirstMouse` 在 `mightBeginDragWhileInactive`／`mightBeginScrollWhileInactive` 均为 false 时返回 false；阿财的 `#pet` 为非滚动页面上的普通按钮，且禁用 WebKit 拖拽 |
+| Swift 回归 | `CompanionWebView.acceptsFirstMouse(for:)` 返回 true；同一 harness 中普通 `WKWebView` 返回 false。合成 `NSApp.sendEvent` 把 pointerdown 送入页面，面板保持非 key、应用保持非 active；该合成路径不模拟窗口服务器的首次点击消费，不能替代实机 |
+| 离线测试 | `npm run check`、`npm test` 89/89（含首次点击回归）通过；10Hz 轮询仅在可见时运行，隐藏、睡眠或退出时停止 |
+| 原生构建 | `npm run prepare:native` 重建 arm64 + x86_64、macOS 13 最低目标、ad-hoc 签名；Native 握手仍为 4，拖动协议不变 |
+| 打包／安装 | `npm run check:package`、`npm run check:install` 通过；没有发布或修改日常安装 |
+| 实机首击 | 已由用户完全退出并重开日常 DSH 后复验：第一次在宠物上按下即可直接拖动，无需先点一次；日常进程加载工作树构建的新 `build/Acai.app` |
+
+## 2026-11-12 · 0.2.0-rc.4 发布检查
+
+发布前在 macOS 27.0.1（arm64）执行 `npm run build:client`、`npm run prepare:native`、`npm run check`、`npm test` 89/89、`npm run check:native`、`npm run check:package`（65 个文件）与 `npm run check:install`，全部通过；原生 smoke 确认协议 4、渲染器就绪、显隐、金币动画和非法实例配置拒绝。Native 为 arm64 + x86_64、macOS 13+、ad-hoc 签名，`native/manifest.json` 与 Info.plist 均为 0.2.0-rc.4。
+
+未覆盖：DSH 0.2.2-rc.2 的浏览器客户端工厂／界面未重新加载（无凭证）；真实任务、审批／提问、导航、Intel 实机、多屏／全屏 Space、连续拖动／穿透／快捷键、VoiceOver 和睡眠唤醒仍需验收。隔离 Host、原生 smoke 与首次点击人工复验不能替代这些实机项。
+
+## 2026-11-12 · DSH 0.2.2-rc.2 兼容检查
+
+安装版为 `0.2.2-rc.2`。现有 `engines.dsh` 范围允许该版本，但隔离启动发现插件未激活：新版 `AgentRegistry` 移除了 `roots()`，原适配器启动时抛出 TypeError。修复保留旧版 `roots()`；新版使用 `list()` 并按 session header 的 `origin: subagent` 排除子代理，带父会话的普通分支仍保留。新版不再提供旧版的运行时所有权关系，故这一判断采用其会话来源语义，不能声称两者完全等价。
+
+| 验证层 | 实际结果与边界 |
+| --- | --- |
+| 源码与组合 | 只读核对安装版源码：新版 registry 提供 `list()`／`get()`，不再提供 `roots()`；会话列表以 `origin: subagent` 标识子代理。隔离组合树包含阿财，没有版本跳过 |
+| 离线测试 | `npm run check` 通过；允许本机 loopback 后 `npm test` 88/88，含旧 registry 和新版子代理／分支聊天回归。沙箱内首次运行的 10 项监听测试因 EPERM 失败，不计为通过 |
+| 隔离真实运行库 | 使用独立 profile、`autoLaunch: false` 和独立状态目录启动安装版 DSH web；修复前插件激活失败，修复后无激活失败告警，DSH 桥接 GET 返回 200 和可用桌面程序状态。未运行真实任务 |
+| 浏览器加载 | 无凭证访问隔离首页返回 401；未读取登录凭证，未验证浏览器客户端工厂或界面加载。桥接 200 不代表浏览器验收通过 |
+| 原生窗口 | 本轮未启动或操作原生窗口；既有原生握手和摘要检查通过 |
+| 打包／安装 | `npm run check:package` 和 `npm run check:install` 通过；没有发布或修改日常安装 |
+| 日常 DSH 完整安装 | 未执行；真实任务、审批／提问、导航和桌面物理交互仍需验收 |
+
 ## 2026-11-11 · 0.2.0-rc.3 DSH 0.2.2-rc.1 兼容修复
 
 现象：DSH 从 `0.2.1-rc.5` 升级到 `0.2.2-rc.1` 后，插件页再次把 `dsh-pet-caishen` 标为「异常」。核对安装版 `app.asar`：`evaluatePluginCompatibility` 仍用 `semver.satisfies(runtime, engines.dsh, { includePrerelease: true })`；旧范围 `>=0.2.1-rc.5 <0.2.2-0` 的上界 `0.2.2-0` 低于预发布 `0.2.2-rc.1`，`loadProfileDirectory` 因而把整个 bundle 记入 `skippedBundles`。这不是 Host 服务或客户端插槽失效，而是版本范围写得太窄。

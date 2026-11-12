@@ -10,7 +10,7 @@
 
 实际启动应通过 stdin 传令牌。开发时也支持 `--url http://127.0.0.1:54321/ --parent-pid 12345`。`--check-config` 只校验配置并退出，可用于无 UI 的协议检查。URL 只接受 HTTP、精确主机 `127.0.0.1`、1024–65535 端口及同一 origin，不接受凭据、fragment、任意外部导航或弹窗。启动信息和错误日志不会输出 URL 或令牌。WKWebView 使用临时 cookie 存储，认证由 `/launch` 设置 cookie 并重定向完成。
 
-透明 NSPanel 的固定视口为 **420 × 440 CSS 像素**。窗口跨应用悬浮、出现在各 Space 中，显示时不主动激活其它应用。主页面注入 `window.__ACAI_NATIVE__ = true`，通过 `window.webkit.messageHandlers.acai.postMessage(...)` 发送：
+透明 NSPanel 的固定视口为 **420 × 440 CSS 像素**。窗口跨应用悬浮、出现在各 Space 中，显示时不主动激活其它应用；`CompanionWebView` 接受非激活面板的第一次鼠标按下，第一次点击即可直接摸头或拖动，不需要先点一次激活。主页面注入 `window.__ACAI_NATIVE__ = true`，通过 `window.webkit.messageHandlers.acai.postMessage(...)` 发送：
 
 | 消息 | 行为 |
 | --- | --- |
@@ -24,7 +24,7 @@
 | `{type:'open-dsh'}` | 激活本机 `com.deepseek.dsh` 应用 |
 | `{type:'quit'}` | 仅退出阿财 |
 
-鼠标位置和按键每秒检查 60 次，无需辅助功能权限；网页位移不参与原生拖动计算，松手不依赖网页事件。握手协议为 3，完整消息与事件见 [PROTOCOL.md](../../docs/PROTOCOL.md)。拖拽位置保存在 UserDefaults，窗口移动与显示器变化后限制在可用屏幕区域内。菜单栏「财」可唤回、收起、打开 DSH、退出；全局 `Control + Option + Command + A` 切换显示，快捷键冲突时仍可用菜单栏。程序默认无声。
+可见期间每秒 10 次轮询光标位置，用于更新透明区穿透；拖动时每秒 60 次检查鼠标位置与按键，无需辅助功能权限。网页位移不参与原生拖动计算，松手不依赖网页事件。握手协议为 4，完整消息与事件见 [PROTOCOL.md](../../docs/PROTOCOL.md)。拖拽位置保存在 UserDefaults，窗口移动与显示器变化后限制在可用屏幕区域内。菜单栏「财」可唤回、收起、打开 DSH、退出；全局 `Control + Option + Command + A` 切换显示，快捷键冲突时仍可用菜单栏。程序默认无声。
 
 宿主可向已运行的伴随进程发送 `SIGUSR1`（Node 中 `child.kill('SIGUSR1')`）来**显示 / 唤回**窗口，发送 `SIGUSR2` 来**收起**窗口；两者均幂等，不会主动激活应用。程序在 bootstrap 阶段忽略两个信号的默认退出行为，再通过主线程 `DispatchSourceSignal` 接收；退出时取消并释放信号 source。
 

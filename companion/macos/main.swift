@@ -98,6 +98,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private var dragRight: CGFloat = 420
     private var drag: CompanionDrag?
     private var mouseTimer: Timer?
+    private var pointerTimer: Timer?
     private var lifecycleTimer: Timer?
     private var healthTimer: Timer?
     private var showSignal: DispatchSourceSignal?
@@ -208,7 +209,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         webConfiguration.userContentController = controller
         webConfiguration.websiteDataStore = .nonPersistent()
         webConfiguration.preferences.javaScriptCanOpenWindowsAutomatically = false
-        webView = WKWebView(frame: NSRect(origin: .zero, size: viewport), configuration: webConfiguration)
+        webView = CompanionWebView(frame: NSRect(origin: .zero, size: viewport), configuration: webConfiguration)
         webView.setValue(false, forKey: "drawsBackground")
         webView.autoresizingMask = [.width, .height]
         webView.navigationDelegate = self
@@ -249,6 +250,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         panel.orderFrontRegardless()
         reportPageVisibility()
         visibilityItem.title = "收起阿财"
+        startPointerTracking()
         updatePointerPassthrough()
         reportVisibility()
     }
@@ -266,6 +268,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
 
     private func hide() {
         finishDrag(cancelled: true)
+        stopPointerTracking()
         panel.orderOut(nil)
         reportPageVisibility()
         visibilityItem.title = "唤回阿财"
@@ -342,11 +345,30 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         webView.load(URLRequest(url: configuration.entryURL, cachePolicy: .reloadIgnoringLocalCacheData)); armReadyTimeout()
     }
     @objc private func retryRenderer() { recoveryAttempts = 0; recoverRenderer(); show() }
-    @objc private func willSleep() { sleeping = true; finishDrag(cancelled: true); reportPageVisibility() }
-    @objc private func didWake() { sleeping = false; screensChanged(); reportPageVisibility() }
+    @objc private func willSleep() { sleeping = true; stopPointerTracking(); finishDrag(cancelled: true); reportPageVisibility() }
+    @objc private func didWake() { sleeping = false; if panel.isVisible { startPointerTracking() }; screensChanged(); reportPageVisibility() }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { recoverRenderer() }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { recoverRenderer() }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { if (error as NSError).code != NSURLErrorCancelled { recoverRenderer() } }
+
+    /// A global mouse monitor can be unavailable without Input Monitoring
+    /// permission, and a cursor can enter the visible pet without a delivered
+    /// mouseMoved event. Poll the public cursor location at a low rate while the
+    /// panel is visible so `ignoresMouseEvents` cannot leave the first press
+    /// click-through. Hidden and sleeping panels stop the timer.
+    private func startPointerTracking() {
+        pointerTimer?.invalidate()
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.updatePointerPassthrough()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        pointerTimer = timer
+    }
+
+    private func stopPointerTracking() {
+        pointerTimer?.invalidate()
+        pointerTimer = nil
+    }
 
     private func startDragTimer() {
         mouseTimer?.invalidate()
@@ -584,6 +606,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         if let localMouseMonitor { NSEvent.removeMonitor(localMouseMonitor) }
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         mouseTimer?.invalidate()
+        stopPointerTracking()
         lifecycleTimer?.invalidate()
         healthTimer?.invalidate()
         showSignal?.cancel()

@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import { attachDshState } from "../lib/dsh-adapter.js";
 
-function fixture({ running = false, questions = [] } = {}) {
+function fixture({ running = false, questions = [], modernRegistry = false } = {}) {
 	const root = { id: "root", status: running ? "running" : "idle", session: { id: "root" } };
-	const child = { id: "child", status: "running", session: { id: "child" } };
+	const child = { id: "child", status: "running", session: { id: "child", header: { origin: "subagent", parentSession: "root" } } };
 	const liveRoots = [root];
 	const handlers = new Map();
 	const effects = [];
@@ -14,7 +14,7 @@ function fixture({ running = false, questions = [] } = {}) {
 	const rows = new Map();
 	let connected = false;
 	const ctx = {
-		agents: { roots: () => liveRoots, get: (id) => [root, child].find((agent) => agent.id === id) },
+		agents: { ...(modernRegistry ? { list: () => [...liveRoots, child] } : { roots: () => liveRoots }), get: (id) => [root, child].find((agent) => agent.id === id) },
 		sessionProjections: {
 			snapshot: () => ({ values: { title: "真实标题", userQuestions: { active: questions } } }),
 			onChanged(listener) { changes.add(listener); return () => changes.delete(listener); }
@@ -39,6 +39,17 @@ function fixture({ running = false, questions = [] } = {}) {
 	const status = () => rows.get("root")?.status;
 	return { ctx, root, child, rows, adapter, emit, event, status, changes, liveRoots, handlers, effects, store };
 }
+
+test("new registry excludes subagents but includes a resumed fork", (t) => {
+	const f = fixture({ modernRegistry: true });
+	t.after(f.adapter.dispose);
+	const fork = { id: "fork", status: "running", session: { id: "fork", header: { parentSession: "root" } } };
+	f.liveRoots.push(fork);
+	f.emit("agent/created", { agent: fork });
+	f.emit("agent/status", { agent: f.child, status: "running" });
+	assert.equal(f.rows.get("fork").status, "running");
+	assert.equal(f.rows.has("child"), false);
+});
 
 test("starts from real root/title/question projections, ignores children and message content", (t) => {
 	const f = fixture({ questions: [{ callId: "q", state: "continued" }] });

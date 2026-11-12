@@ -62,7 +62,7 @@ sessions 是相同结构的当前存活 root 列表；断连时为空。activity
 
 ## Native stdout 与消息
 
-启动输出 `{"type":"hello","protocol":4,"version":"0.2.0-rc.3"}`，version 取本 App 的实际版本。随后按事实报告：
+启动输出 `{"type":"hello","protocol":4,"version":"0.2.0-rc.4"}`，version 取本 App 的实际版本。随后按事实报告：
 
 | stdout type | 数据 | 含义 |
 | --- | --- | --- |
