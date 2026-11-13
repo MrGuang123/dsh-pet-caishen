@@ -4,16 +4,17 @@ import { mkdir, mkdtemp, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
-async function checkSwift(t, source) {
+async function checkSwift(t, source, extraSources = []) {
   await mkdir("build", { recursive: true });
   const directory = await mkdtemp("build/geometry-test-");
   t.after(() => rm(directory, { recursive: true, force: true }));
   const main = join(directory, "main.swift");
   await writeFile(main, `import Foundation\nimport CoreGraphics\n${source}`);
   const binary = join(directory, "geometry-check");
-  const compiled = spawnSync("xcrun", ["swiftc", "-module-cache-path", "build/.module-cache", "companion/macos/Geometry.swift", main, "-o", binary], { encoding: "utf8" });
+  const compiled = spawnSync("xcrun", ["swiftc", "-module-cache-path", "build/.module-cache", "companion/macos/Geometry.swift", ...extraSources, main, "-o", binary], { encoding: "utf8" });
   assert.equal(compiled.status, 0, compiled.stderr);
   const result = spawnSync(binary, [], { encoding: "utf8" });
+  if (result.status === 77) { t.skip("WindowServer or a display is unavailable"); return; }
   assert.equal(result.status, 0, result.stderr);
 }
 
@@ -31,6 +32,49 @@ let second = CGRect(x: -1920, y: 0, width: 1920, height: 1080)
 precondition(CompanionGeometry.clampedX(-4000, screen: second, left: 108, right: 319) == -2020)
 precondition(CompanionGeometry.clampedX(500, screen: screen, left: 108, right: 319) == 500)
 `);
+});
+
+test("native vertical clamp uses visible content rather than the transparent viewport", { skip: process.platform !== "darwin" }, async t => {
+  await checkSwift(t, `
+let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
+let height: CGFloat = 440, top: CGFloat = 198, bottom: CGFloat = 420
+let upper = CompanionGeometry.clampedY(2000, screen: screen, height: height, top: top, bottom: bottom)
+precondition(upper == 650)
+precondition(upper + height - top == screen.maxY - 8)
+precondition(upper + height > screen.maxY)
+let lower = CompanionGeometry.clampedY(-2000, screen: screen, height: height, top: top, bottom: bottom)
+precondition(lower == -12)
+precondition(lower + height - bottom == screen.minY + 8)
+precondition(CompanionGeometry.clampedY(200, screen: screen, height: height, top: top, bottom: bottom) == 200)
+let upperScreen = CGRect(x: 0, y: 900, width: 1440, height: 900)
+precondition(CompanionGeometry.clampedY(3000, screen: upperScreen, height: height, top: top, bottom: bottom) == 1550)
+let small = CGRect(x: 0, y: -500, width: 800, height: 180)
+precondition(CompanionGeometry.clampedY(0, screen: small, height: height, top: top, bottom: bottom).isFinite)
+`);
+});
+
+test("AppKit preserves the content-clamped panel origin above and below the visible screen", { skip: process.platform !== "darwin" }, async t => {
+  await checkSwift(t, `
+import AppKit
+let app = NSApplication.shared
+app.setActivationPolicy(.accessory)
+guard let screen = NSScreen.main else { exit(77) }
+let bounds = screen.visibleFrame
+let height: CGFloat = 440, top: CGFloat = 221, bottom: CGFloat = 420
+let panel = CompanionPanel(contentRect: NSRect(x: bounds.midX - 210, y: bounds.midY - 220, width: 420, height: height), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+panel.isMovable = false
+panel.orderFrontRegardless()
+defer { panel.orderOut(nil) }
+let upper = CompanionGeometry.clampedY(bounds.maxY + 1000, screen: bounds, height: height, top: top, bottom: bottom)
+panel.setFrameOrigin(NSPoint(x: bounds.midX - 210, y: upper))
+precondition(abs(panel.frame.minY - upper) < 0.01, "AppKit constrained the upper transparent area")
+precondition(abs(panel.frame.maxY - top - (bounds.maxY - 8)) < 0.01)
+precondition(panel.frame.maxY > bounds.maxY)
+let lower = CompanionGeometry.clampedY(bounds.minY - 1000, screen: bounds, height: height, top: top, bottom: bottom)
+panel.setFrameOrigin(NSPoint(x: bounds.midX - 210, y: lower))
+precondition(abs(panel.frame.minY - lower) < 0.01, "AppKit constrained the lower transparent area")
+precondition(abs(panel.frame.maxY - bottom - (bounds.minY + 8)) < 0.01)
+`, ["companion/macos/CompanionPanel.swift"]);
 });
 
 test("native drag follows a fixed global mouse anchor without cumulative drift", { skip: process.platform !== "darwin" }, async t => {

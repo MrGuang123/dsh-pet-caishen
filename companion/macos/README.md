@@ -17,14 +17,14 @@
 | `{type:'ready'}` | 页面就绪 |
 | `{type:'drag-start',id}` | 记录全局鼠标与窗口原点，开始原生跟随 |
 | `{type:'drag-end',id,cancelled}` | 结束或取消对应手势 |
-| `{type:'drag-bounds',left,right}` | 左右拖动按宠物／状态／悬停按钮占用范围约束，透明窗口留白不算边界 |
+| `{type:'drag-bounds',left,right,top,bottom}` | 四边拖动按宠物／状态／悬停按钮占用范围约束，透明窗口留白不算边界 |
 | `{type:'resize',size:120..240}` | 页面内部缩放，保留固定视口 |
 | `{type:'hit-zones',zones:[{x,y,width,height}]}` | 交互热区，原点在视口左上角；热区之外点击穿透 |
 | `{type:'hide'}` | 收起窗口，菜单栏保留 |
 | `{type:'open-dsh'}` | 激活本机 `com.deepseek.dsh` 应用 |
 | `{type:'quit'}` | 仅退出阿财 |
 
-可见期间每秒 10 次轮询光标位置，用于更新透明区穿透；拖动时每秒 60 次检查鼠标位置与按键，无需辅助功能权限。网页位移不参与原生拖动计算，松手不依赖网页事件。握手协议为 4，完整消息与事件见 [PROTOCOL.md](../../docs/PROTOCOL.md)。拖拽位置保存在 UserDefaults，窗口移动与显示器变化后限制在可用屏幕区域内。菜单栏「财」可唤回、收起、打开 DSH、退出；全局 `Control + Option + Command + A` 切换显示，快捷键冲突时仍可用菜单栏。程序默认无声。
+拖动时每秒 60 次检查鼠标位置与按键，无需辅助功能权限。网页位移不参与原生拖动计算，松手不依赖网页事件。握手协议为 5，完整消息与事件见 [PROTOCOL.md](../../docs/PROTOCOL.md)。拖拽位置保存在 UserDefaults，窗口移动与显示器变化后限制在可用屏幕区域内。菜单栏「财」可唤回、收起、打开 DSH、退出；全局 `Control + Option + Command + A` 切换显示，快捷键冲突时仍可用菜单栏。程序默认无声。
 
 宿主可向已运行的伴随进程发送 `SIGUSR1`（Node 中 `child.kill('SIGUSR1')`）来**显示 / 唤回**窗口，发送 `SIGUSR2` 来**收起**窗口；两者均幂等，不会主动激活应用。程序在 bootstrap 阶段忽略两个信号的默认退出行为，再通过主线程 `DispatchSourceSignal` 接收；退出时取消并释放信号 source。
 

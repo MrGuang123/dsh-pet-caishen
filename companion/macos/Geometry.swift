@@ -26,4 +26,11 @@ enum CompanionGeometry {
         let maximum = screen.maxX - 8 - right
         return min(max(proposed, minimum), max(minimum, maximum))
     }
+
+    /// Web coordinates start at the top; AppKit's window origin is bottom-left.
+    static func clampedY(_ proposed: CGFloat, screen: CGRect, height: CGFloat, top: CGFloat, bottom: CGFloat) -> CGFloat {
+        let minimum = screen.minY + 8 - height + bottom
+        let maximum = screen.maxY - 8 - height + top
+        return min(max(proposed, minimum), max(minimum, maximum))
+    }
 }

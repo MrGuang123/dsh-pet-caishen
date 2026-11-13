@@ -6,7 +6,7 @@ import Foundation
 import WebKit
 
 // Keep in sync with NATIVE_PROTOCOL in lib/desktop.js.
-let companionProtocol = 4
+let companionProtocol = 5
 
 // macOS 13+; the web renderer and authenticated loopback server are owned by DSH.
 struct LaunchConfiguration: Decodable {
@@ -81,11 +81,6 @@ private struct CompanionCommand: Decodable {
     let name: String?
 }
 
-final class CompanionPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
-}
-
 final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate, NSWindowDelegate {
     private let configuration: LaunchConfiguration
     private let viewport = NSSize(width: 420, height: 440)
@@ -96,6 +91,8 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     private var hitZones: [NSRect] = []
     private var dragLeft: CGFloat = 0
     private var dragRight: CGFloat = 420
+    private var dragTop: CGFloat = 0
+    private var dragBottom: CGFloat = 440
     private var drag: CompanionDrag?
     private var mouseTimer: Timer?
     private var pointerTimer: Timer?
@@ -134,6 +131,10 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
                left.isFinite, right.isFinite, left >= 0, right <= 420, right > left {
                 geometry["contentLeft"] = left; geometry["contentRight"] = right
             }
+            if let top = legacy["contentTop"] as? Double, let bottom = legacy["contentBottom"] as? Double,
+               top.isFinite, bottom.isFinite, top >= 0, bottom <= 440, bottom > top {
+                geometry["contentTop"] = top; geometry["contentBottom"] = bottom
+            }
             defaults.set(geometry, forKey: positionKey)
         }
         // Restore the footprint before the first clamp, otherwise a saved
@@ -143,6 +144,11 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
            left.isFinite, right.isFinite, left >= 0, right <= viewport.width, right > left {
             dragLeft = left
             dragRight = right
+        }
+        if let saved = defaults.dictionary(forKey: positionKey),
+           let top = saved["contentTop"] as? Double, let bottom = saved["contentBottom"] as? Double,
+           top.isFinite, bottom.isFinite, top >= 0, bottom <= viewport.height, bottom > top {
+            dragTop = top; dragBottom = bottom
         }
     }
 
@@ -400,10 +406,14 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         case "retry-renderer": retryRenderer()
         case "drag-bounds":
             guard let left = finiteNumber(body["left"]), let right = finiteNumber(body["right"]),
-                  left >= 0, right <= viewport.width, right > left else { return }
-            if dragLeft == left && dragRight == right { return }
+                  let top = finiteNumber(body["top"]), let bottom = finiteNumber(body["bottom"]),
+                  left >= 0, right <= viewport.width, right > left,
+                  top >= 0, bottom <= viewport.height, bottom > top else { return }
+            if dragLeft == left && dragRight == right && dragTop == top && dragBottom == bottom { return }
             dragLeft = left
             dragRight = right
+            dragTop = top
+            dragBottom = bottom
             if drag != nil { updateDrag() }
             else { panel.setFrameOrigin(clampedOrigin(panel.frame.origin)) }
             savePosition()
@@ -512,7 +522,8 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
 
     private func savePosition() {
         defaults.set(["x": panel.frame.minX, "y": panel.frame.minY,
-                      "contentLeft": dragLeft, "contentRight": dragRight], forKey: positionKey)
+                      "contentLeft": dragLeft, "contentRight": dragRight,
+                      "contentTop": dragTop, "contentBottom": dragBottom], forKey: positionKey)
     }
 
     private func initialOrigin() -> NSPoint {
@@ -524,32 +535,35 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
         return NSPoint(x: screen.maxX - viewport.width - 24, y: screen.minY + 16)
     }
 
-    private func clampedOrigin(_ proposed: NSPoint) -> NSPoint {
+    private func screenFor(_ proposed: NSPoint) -> NSScreen? {
         let frame = NSRect(origin: proposed, size: viewport)
-        let center = NSPoint(x: frame.minX + (dragLeft + dragRight) / 2, y: frame.midY)
-        guard let bounds = NSScreen.screens.map(\.visibleFrame).min(by: { first, second in
+        let center = NSPoint(x: frame.minX + (dragLeft + dragRight) / 2,
+                             y: frame.maxY - (dragTop + dragBottom) / 2)
+        return NSScreen.screens.min(by: { first, second in
             func squaredDistance(_ rect: NSRect) -> CGFloat {
                 let dx = max(rect.minX - center.x, 0, center.x - rect.maxX)
                 let dy = max(rect.minY - center.y, 0, center.y - rect.maxY)
                 return dx * dx + dy * dy
             }
-            return squaredDistance(first) < squaredDistance(second)
-        }) else { return proposed }
+            return squaredDistance(first.visibleFrame) < squaredDistance(second.visibleFrame)
+        })
+    }
+
+    private func clampedOrigin(_ proposed: NSPoint) -> NSPoint {
+        guard let bounds = screenFor(proposed)?.visibleFrame else { return proposed }
         return NSPoint(x: CompanionGeometry.clampedX(proposed.x, screen: bounds, left: dragLeft, right: dragRight),
-                       y: min(max(proposed.y, bounds.minY), max(bounds.minY, bounds.maxY - viewport.height)))
+                       y: CompanionGeometry.clampedY(proposed.y, screen: bounds, height: viewport.height, top: dragTop, bottom: dragBottom))
     }
 
     private func reportScreenBounds() {
         guard let panel, let webView else { return }
-        let anchor = NSRect(x: panel.frame.minX + dragLeft, y: panel.frame.minY,
-                            width: dragRight - dragLeft, height: viewport.height)
-        guard let screen = NSScreen.screens.max(by: {
-            $0.visibleFrame.intersection(anchor).width < $1.visibleFrame.intersection(anchor).width
-        }) else { return }
+        guard let screen = screenFor(panel.frame.origin) else { return }
         let left = max(0, screen.visibleFrame.minX - panel.frame.minX)
         let right = min(viewport.width, screen.visibleFrame.maxX - panel.frame.minX)
-        let script = "window.dispatchEvent(new CustomEvent('acai-screen',{detail:{left:\(left),right:\(right)}}))"
-        let key = "\(left):\(right)"
+        let top = max(0, panel.frame.maxY - screen.visibleFrame.maxY)
+        let bottom = min(viewport.height, panel.frame.maxY - screen.visibleFrame.minY)
+        let script = "window.dispatchEvent(new CustomEvent('acai-screen',{detail:{left:\(left),right:\(right),top:\(top),bottom:\(bottom)}}))"
+        let key = "\(left):\(right):\(top):\(bottom)"
         guard key != lastScreenBounds else { return }; lastScreenBounds = key
         webView.evaluateJavaScript(script) { _, _ in }
     }
@@ -557,6 +571,7 @@ final class CompanionDelegate: NSObject, NSApplicationDelegate, WKScriptMessageH
     @objc private func screensChanged() {
         finishDrag(cancelled: true)
         panel.setFrameOrigin(clampedOrigin(panel.frame.origin))
+        reportScreenBounds()
     }
 
     private func checkParent() {

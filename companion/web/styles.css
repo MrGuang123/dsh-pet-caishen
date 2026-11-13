@@ -196,7 +196,7 @@ button:disabled {
 .speech-bubble {
   --bubble-max-height:calc(100vh - 32px);
   position:absolute;
-  bottom:calc(100% + 8px);
+  bottom:calc(100% + 8px - var(--overlay-shift-y, 0px));
   left:calc(50% + var(--overlay-shift-x, 0px));
   transform:translateX(-50%);
   width:max-content;
@@ -243,7 +243,7 @@ button:disabled {
   z-index:20;
   max-height:calc(100vh - 86px);
   overflow-y:auto;
-  bottom:40px;
+  bottom:calc(40px - var(--overlay-shift-y, 0px));
   left:calc(50% + var(--overlay-shift-x, 0px));
   transform:translateX(-50%);
   width:264px;
@@ -824,14 +824,14 @@ body.preview {
     bottom:17px
   }
   .speech-bubble {
-    bottom:calc(100% + 3px);
+    bottom:calc(100% + 3px - var(--overlay-shift-y, 0px));
     font-size:11px
   }
   .speech-content {
     padding:8px 11px
   }
   .settings {
-    bottom:26px;
+    bottom:calc(26px - var(--overlay-shift-y, 0px));
     max-height:calc(100vh - 88px);
     overflow-y:auto
   }
@@ -1082,7 +1082,7 @@ select{font:inherit;color:var(--ink);background:var(--paper-deep);border:1px sol
 #bubble-text{white-space:pre-line}#bubble-dismiss{display:block;font-size:11px;margin-top:5px}
 #task-count{font-size:10px;color:var(--muted);max-width:112px;white-space:normal}
 .tasks{bottom:38px;max-height:calc(100vh - 70px)}.task-row{border-bottom:1px solid var(--line);padding:8px 0;display:flex;gap:5px;align-items:center}.task-row button{border:0;border-radius:6px;background:transparent;text-align:left;color:var(--ink);font-size:11px;min-height:32px;padding:5px}.task-row button:first-child{flex:1;min-width:0}.task-row button:hover{background:var(--paper-deep)}.task-row strong,.task-row span{display:block;overflow-wrap:anywhere}.task-row span{font-size:11px;color:var(--muted);margin-top:4px}.task-row button:last-child:not(:first-child){color:var(--red);flex:none;width:42px}
-.onboarding{z-index:25;font-size:12px;bottom:calc(100% + 4px)}#help-close{margin-top:8px}
+.onboarding{z-index:25;font-size:12px;bottom:calc(100% + 4px - var(--overlay-shift-y, 0px))}#help-close{margin-top:8px}
 .mini:not(.pet-hover):not(:focus-within):not(.menu-open):not(.important) .status-badge{opacity:0;visibility:hidden;pointer-events:none}
 .mini:not(.pet-hover):not(:focus-within) .status-badge{font-size:10px;padding:4px 8px}
 .position-locked .pet{cursor:pointer}

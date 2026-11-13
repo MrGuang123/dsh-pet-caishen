@@ -4,7 +4,7 @@
 
 中文名为「阿财」，拼音标识为 `acai`，英文显示名为 **Acai**。
 
-项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前预发布版本 **0.2.0-rc.4**，适配 **DSH 0.2.2-rc.2、macOS 13+**。`engines.dsh` 覆盖 `0.2.1-rc.5` 起的整条 0.2.x，避免 DSH 小版本升级时把插件整体判定为不兼容。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；0.3 及以上尚未验证。
+项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前预发布版本 **0.2.0-rc.5**，适配 **DSH 0.2.2-rc.2、macOS 13+**。`engines.dsh` 覆盖 `0.2.1-rc.5` 起的整条 0.2.x，避免 DSH 小版本升级时把插件整体判定为不兼容。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；0.3 及以上尚未验证。
 
 ![阿财当前形象 · 空闲状态演示](docs/screenshots/acai-preview.png)
 
@@ -19,7 +19,7 @@
 - 点击主题「功德 +1」时，宠物可见的阿财会蹦一枚金币；不读取或修改功德计数。
 - 拖动、多屏位置夹取、位置记忆、尺寸、安静模式、减少动画。
 - 原生以鼠标按下时的位置为锚点跟随，停住不漂移；松开检测不依赖网页事件。
-- 左右拖动按宠物和工具栏实际范围计算，透明留白不占边界；靠边时设置与气泡向屏幕内展开。
+- 上下左右拖动按宠物和工具栏实际范围计算，透明留白不占边界；靠边时设置与气泡向屏幕内展开。
 - 悬停时点击返回箭头，唤回 DSH 上次选中的聊天；与当前任务的状态气泡导航独立。
 - 透明空白区域鼠标穿透；菜单栏唤回与 `Control + Option + Command + A` 显示／收起。
 - 本地开工签；默认无声，无额外模型请求、遥测或远程素材。
@@ -29,9 +29,13 @@
 
 本版新增按轮次绑定的任务气泡、多任务列表、单次庆祝与提醒消退、提醒分级／暂静 30 分钟、迷你／大字、动作变化、位置锁定／停靠／重置、可配置唤回字母、渲染恢复和最小诊断。快捷键修饰键保持 Control + Option + Command，可选 A–Z 或停用。3D 排在本阶段验收后。
 
-气泡已改为圆角，移除底部「∨」尖角，短消息不再出现多余滚动条，长消息按需滚动。HTTP 状态升级为 v2，Native 握手升级为 4，安装包包含同步重建的原生程序。
+气泡已改为圆角，移除底部「∨」尖角，短消息不再出现多余滚动条，长消息按需滚动。HTTP 状态为 v2，Native 握手为 5，安装包包含同步重建的原生程序。
 
 本版为预发布，整体 2D 阶段尚未完成全部实机验收；完整 DSH 界面流程、Intel、多屏、连续拖动等边界见 [验证记录](docs/VALIDATION.md)。既有稳定版仍为 0.1.0。
+
+### 顶部拖动边界修复
+
+原生透明窗口上方的留白曾先碰到屏幕顶部，导致阿财无法靠近顶部。本版按角色和控件实际范围约束窗口，并避免 AppKit 再次按整个透明窗口夹取；靠边时气泡和设置向屏幕内调整。用户已在日常 DSH 中确认可以拖到顶部；多屏等专项仍待验收。
 
 ### DSH 0.2.2-rc.2 兼容与首次点击拖拽修复
 
@@ -41,7 +45,7 @@ DSH 0.2.2 继续按 `engines.dsh` 拒绝不满足范围的第三方组合包。`
 - 适配器保留旧版 `roots()`；rc.2 改用 `list()`，并按 session header 的 `origin: subagent` 排除子代理，带父会话的普通用户 fork 仍保留。新旧 registry 都有回归测试。
 - 在隔离 profile 启动 DSH `0.2.2-rc.2` 的 `dsh web`：组合无跳过、插件激活、桥接 `GET` 返回 200 和可用桌面状态；本轮未运行真实任务。
 - 修复首次点击拖拽：非激活 `NSPanel` 的第一次按下被 AppKit 用于激活，`WKWebView` 默认拒绝该点击；`CompanionWebView` 接受首击，并恢复可见期间 10Hz 光标轮询更新透明区穿透。用户重启日常 DSH 后已实机确认第一次按下即可拖动，无需先点一次。
-- 原生握手仍为 4、HTTP 状态仍为 v2；原生程序按 `0.2.0-rc.4` 重建，无需迁移既有偏好。
+- 本版原生握手为 5、HTTP 状态仍为 v2；需使用随包更新的原生程序，既有外观偏好保留。
 
 升级后需完全退出并重新打开 DSH，新 bundle 和新原生程序才会生效；仅刷新页面不会重载宿主插件树。若同级财神主题仍使用旧范围，主题也可能被单独跳过，需要在其仓库同步放宽范围。
 
@@ -53,7 +57,7 @@ DSH 0.2.2 继续按 `engines.dsh` 拒绝不满足范围的第三方组合包。`
 2. 填写以下完整地址，点击「安装」：
 
    ```text
-   git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.4
+   git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.5
    ```
 
 3. 安装完成后点击「立即启用」，按 DSH 提示刷新或完全退出后重启。
@@ -61,12 +65,12 @@ DSH 0.2.2 继续按 `engines.dsh` 拒绝不满足范围的第三方组合包。`
 
 GitHub 地址必须能从本机访问；切换 npm 镜像不能替代 GitHub 下载。DSH 的安装方式见 [官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md)。
 
-也可以在 [Releases](https://github.com/MrGuang123/dsh-pet-caishen/releases) 下载 `dsh-pet-caishen-0.2.0-rc.4.tgz`，在「添加插件」中填写该文件的绝对路径。Release 同时提供 `SHA256SUMS`。GitHub 自动生成的源码 ZIP 解压后，也可填写插件目录的绝对路径。
+也可以在 [Releases](https://github.com/MrGuang123/dsh-pet-caishen/releases) 下载 `dsh-pet-caishen-0.2.0-rc.5.tgz`，在「添加插件」中填写该文件的绝对路径。Release 同时提供 `SHA256SUMS`。GitHub 自动生成的源码 ZIP 解压后，也可填写插件目录的绝对路径。
 
 使用已配置 CLI profile 的用户可以运行：
 
 ```bash
-dsh plugin --profile web add 'git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.4'
+dsh plugin --profile web add 'git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.5'
 ```
 
 将 `web` 换成实际的 CLI profile 名称；桌面端用户建议直接使用插件页面。

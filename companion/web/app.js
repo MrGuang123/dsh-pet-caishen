@@ -1,7 +1,7 @@
 import { DEFAULT_STORED_PREFERENCES, resolveNotificationPolicy, normalizeStoredPreferences, validateStoredPreferencePatch } from './preference-schema.js';
 import { activityKey, canNotify, fixedTarget, taskDetail, taskCounts } from './experience.js';
 import { mountCharacter } from './character.js';
-import { horizontalFootprint, overlayShift } from './layout.js';
+import { horizontalFootprint, verticalFootprint, overlayShift } from './layout.js';
 import { attachPetDrag } from './drag.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -340,12 +340,16 @@ function scheduleZones() {
   if (zonesFrame) return;
   zonesFrame = requestAnimationFrame(() => {
     zonesFrame = null;
-    const maxHeight = `${Math.max(96, Math.floor(stage.getBoundingClientRect().bottom - 54))}px`;
+    const availableHeight = visibleScreen ? visibleScreen.bottom - visibleScreen.top - 16 : innerHeight - 16;
+    const maxHeight = `${Math.max(28, Math.floor(Math.min(stage.getBoundingClientRect().bottom - 54, availableHeight)))}px`;
     for (const overlay of [settings, $('#tasks')]) if (overlay.style.maxHeight !== maxHeight) overlay.style.maxHeight = maxHeight;
-    const bubbleHeight = `${Math.max(28, Math.floor(stage.getBoundingClientRect().top - 12))}px`;
+    const bubbleHeight = `${Math.max(28, Math.floor(Math.min(stage.getBoundingClientRect().top - 12, availableHeight)))}px`;
     for (const overlay of [bubble, $('#onboarding')]) if (overlay.style.getPropertyValue('--bubble-max-height') !== bubbleHeight) overlay.style.setProperty('--bubble-max-height', bubbleHeight);
     if (!native) return;
-    const footprint = horizontalFootprint([pet, $('#status'), $('#pet-tools')].filter(element => element.id === 'pet-tools' || getComputedStyle(element).visibility !== 'hidden').map(element => element.getBoundingClientRect()), innerWidth);
+    const rectangles = [pet, $('#status'), $('#pet-tools')].filter(element => element.id === 'pet-tools' || getComputedStyle(element).visibility !== 'hidden').map(element => element.getBoundingClientRect());
+    const horizontal = horizontalFootprint(rectangles, innerWidth);
+    const vertical = verticalFootprint(rectangles, innerHeight);
+    const footprint = horizontal && vertical ? { ...horizontal, ...vertical } : null;
     const encodedBounds = JSON.stringify(footprint);
     if (footprint && encodedBounds !== lastDragBounds) {
       lastDragBounds = encodedBounds;
@@ -359,6 +363,12 @@ function scheduleZones() {
         if (Math.abs(next - current) > 0.5) {
           overlay.dataset.screenShift = String(next);
           overlay.style.setProperty('--overlay-shift-x', `${next}px`);
+        }
+        const currentY = Number(overlay.dataset.screenShiftY || 0);
+        const nextY = overlayShift({ left: rect.top - currentY, right: rect.bottom - currentY }, { left: visibleScreen.top, right: visibleScreen.bottom });
+        if (Math.abs(nextY - currentY) > 0.5) {
+          overlay.dataset.screenShiftY = String(nextY);
+          overlay.style.setProperty('--overlay-shift-y', `${nextY}px`);
         }
       }
     }
@@ -464,8 +474,8 @@ document.querySelectorAll('[data-demo]').forEach((button) => button.addEventList
 addEventListener('resize', () => { clampBrowserPosition(); scheduleZones(); });
 addEventListener('acai-screen', (event) => {
   const bounds = event.detail;
-  if (!bounds || !Number.isFinite(bounds.left) || !Number.isFinite(bounds.right) || bounds.right <= bounds.left) return;
-  visibleScreen = { left: Math.max(0, bounds.left), right: Math.min(innerWidth, bounds.right) };
+  if (!bounds || ![bounds.left, bounds.right, bounds.top, bounds.bottom].every(Number.isFinite) || bounds.right <= bounds.left || bounds.bottom <= bounds.top) return;
+  visibleScreen = { left: Math.max(0, bounds.left), right: Math.min(innerWidth, bounds.right), top: Math.max(0, bounds.top), bottom: Math.min(innerHeight, bounds.bottom) };
   document.documentElement.style.setProperty('--screen-content-width', `${Math.max(0, visibleScreen.right - visibleScreen.left - 16)}px`);
   scheduleZones();
 });

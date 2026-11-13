@@ -7,6 +7,15 @@ export function horizontalFootprint(rectangles, width) {
   return right > left ? { left, right } : null;
 }
 
+/** Vertical footprint in WebView coordinates, without the transparent margins. */
+export function verticalFootprint(rectangles, height) {
+  const valid = rectangles.filter(rect => Number.isFinite(rect.top) && Number.isFinite(rect.bottom) && rect.bottom > rect.top);
+  if (!valid.length) return null;
+  const top = Math.max(0, Math.min(...valid.map(rect => rect.top)));
+  const bottom = Math.min(height, Math.max(...valid.map(rect => rect.bottom)));
+  return bottom > top ? { top, bottom } : null;
+}
+
 /** Shift an existing overlay inward without moving the pet's screen anchor. */
 export function overlayShift(rect, visible, current = 0, margin = 8) {
   const min = visible.left + margin;

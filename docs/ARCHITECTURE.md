@@ -53,7 +53,7 @@ DSH 宿主通过 agent/status、agent/error、turn/end 及用户问题投影同�
 
 ## 依据
 
-- 本机 `DeepSeek Harness.app` 的 `0.2.2-rc.2` 已安装源码；本轮发布标签为 `v0.2.0-rc.4`。
+- 本机 `DeepSeek Harness.app` 的 `0.2.2-rc.2` 已安装源码；本轮发布标签为 `v0.2.0-rc.5`。
 - [官方 Desktop product API](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/src/ipc.ts)。
 - [社区 dsh-pet 桌面宿主限制](https://github.com/Luv061211/dsh-pet#readme)。
 

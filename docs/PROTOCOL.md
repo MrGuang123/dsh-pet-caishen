@@ -1,6 +1,6 @@
 # 本机桥接协议 v2
 
-当前工作树使用 HTTP 状态 v2、偏好存储 schemaVersion 2、Native 握手 4。旧版 Native 程序会被拒绝，需要重建／安装完整程序。新契约见 [STATE_CONTRACT.md](STATE_CONTRACT.md)。
+当前工作树使用 HTTP 状态 v2、偏好存储 schemaVersion 2、Native 握手 5。旧版 Native 程序会被拒绝，需要重建／安装完整程序。新契约见 [STATE_CONTRACT.md](STATE_CONTRACT.md)。
 
 ## 启动与认证
 
@@ -62,7 +62,7 @@ sessions 是相同结构的当前存活 root 列表；断连时为空。activity
 
 ## Native stdout 与消息
 
-启动输出 `{"type":"hello","protocol":4,"version":"0.2.0-rc.4"}`，version 取本 App 的实际版本。随后按事实报告：
+启动输出 `{"type":"hello","protocol":5,"version":"<App version>"}`，version 取本 App 的实际版本。随后按事实报告：
 
 | stdout type | 数据 | 含义 |
 | --- | --- | --- |
@@ -85,8 +85,8 @@ sessions 是相同结构的当前存活 root 列表；断连时为空。activity
 | resize | size | 角色缩放提示；原生 viewport 保持 420×440 |
 | hide／quit／open-dsh | 无 | 收起／退出／唤回固定 bundle id |
 | hit-zones | zones[{x,y,width,height}] | 可见交互区域；透明区穿透 |
-| drag-bounds | left、right | 角色、状态条、悬停按钮的真实左右范围 |
+| drag-bounds | left、right、top、bottom | 角色、状态条、悬停按钮在视口中的真实范围；上下坐标从视口顶部起算 |
 
-Native 注入 `__ACAI_NATIVE__`，回传 acai-drag `{id,phase,moved,cancelled}`、acai-screen `{left,right}`、acai-visibility 布尔值及 acai-shortcut 状态。网页隐藏／休眠时暂停动画并降低轮询；仍保持宿主状态与生命周期检测。
+Native 注入 `__ACAI_NATIVE__`，回传 acai-drag `{id,phase,moved,cancelled}`、acai-screen `{left,right,top,bottom}`（屏幕可用区域与视口的交集）、acai-visibility 布尔值及 acai-shortcut 状态。网页隐藏／休眠时暂停动画并降低轮询；仍保持宿主状态与生命周期检测。
 
-拖动继续用 AppKit 全局鼠标坐标与按下时窗口原点作为固定锚点，5pt 阈值，不累加网页位移、不乘 Retina 倍率。只在手势中启动 60Hz common-mode 定时器兜底松手；静止时用鼠标事件更新穿透。位置在手势结束保存，边界回传去重。可选停靠只在真实移动后的正常松手执行，点击与取消均不吸边。
+拖动继续用 AppKit 全局鼠标坐标与按下时窗口原点作为固定锚点，5pt 阈值，不累加网页位移、不乘 Retina 倍率。四边按角色及控件实际范围约束，透明留白可移出屏幕；气泡和设置根据可用区域向内调整。只在手势中启动 60Hz common-mode 定时器兜底松手；静止时用鼠标事件更新穿透。位置及范围在手势结束保存，边界回传去重。可选停靠只在真实移动后的正常松手执行，点击与取消均不吸边。
