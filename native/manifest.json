@@ -1,15 +1,15 @@
 {
-  "version": "0.2.0-rc.5",
+  "version": "0.2.0-rc.6",
   "protocol": 5,
   "architectures": [
     "arm64",
     "x86_64"
   ],
-  "sourcesSha256": "77e5b8c0cce50b3661f8b49550d0dc27e33f4dc451aa28c47b6a48b1fe55f3b7",
+  "sourcesSha256": "7465a939eb285ce3012c564a328654c96dd6f38ef6930d2d9c6db6c0d4f91ff0",
   "files": {
     "native/Acai.app/Contents/_CodeSignature/CodeResources": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
-    "native/Acai.app/Contents/Info.plist": "734f1482d5228497c83f38d3de2035a5e66f7fe0cf449528694597eb0c84b406",
-    "native/Acai.app/Contents/MacOS/Acai": "ae7c403bafcb744c1aa0c154dedef2d4a1a820352f84d934f2b86b0c01a5932d",
+    "native/Acai.app/Contents/Info.plist": "397512d6ef0964ac53b77b7b6437ae2c72e7f06dd91b73a35fac54ff109e4f68",
+    "native/Acai.app/Contents/MacOS/Acai": "fd594a1c547ca45001c67c01e3c04adbf194383f554b9fe90d65f6e1ef713ac7",
     "native/Acai.app/Contents/PkgInfo": "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0"
   }
 }

@@ -54,7 +54,7 @@ lib/client/
 
 ## DSH 契约
 
-当前实际核对版本 `0.2.2-rc.2`（并复核 `0.2.1-rc.5` 契约一致），本轮发布标签为 `v0.2.0-rc.5`；`engines.dsh` 为 `>=0.2.1-rc.5 <0.3.0-0`。`npm run check` 会拒绝只覆盖单个 rc 的范围。客户端不是另一份 React bundle，而是使用宿主 `window.__ModuleLoader__` 和宿主 React。
+当前实际核对版本 `0.2.2-rc.2`（并复核 `0.2.1-rc.5` 契约一致），本轮发布标签为 `v0.2.0-rc.6`；`engines.dsh` 为 `>=0.2.1-rc.5 <0.3.0-0`。`npm run check` 会拒绝只覆盖单个 rc 的范围。客户端不是另一份 React bundle，而是使用宿主 `window.__ModuleLoader__` 和宿主 React。
 
 服务：`agents`、`sessionProjections`；状态事件：`agent/status`、`agent/error`、`session/event`。投影只读 `title` 和 `userQuestions`。审批与问题 waterfall observer 始终将 `next()` 原值／错误透明传回，绝不回答、批准或改写任务。
 

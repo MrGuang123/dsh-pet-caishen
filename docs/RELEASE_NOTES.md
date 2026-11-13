@@ -1,4 +1,4 @@
-# 阿财 0.2.0-rc.5
+# 阿财 0.2.0-rc.6
 
 修复阿财无法拖近屏幕顶部的问题。透明窗口上方的留白曾先被屏幕边界挡住，AppKit 还会把整个窗口推回屏幕内。本版按角色、状态条与悬停工具栏的实际范围限制位置；气泡、引导和设置在靠近屏幕边缘时向内调整。用户已在日常 DSH 中确认可以拖到顶部。
 
@@ -10,11 +10,11 @@
 在 DSH「插件」→「添加插件」填入：
 
 ```text
-git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.5
+git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.6
 ```
 
-也可下载本页的 `dsh-pet-caishen-0.2.0-rc.5.tgz`，在添加插件时填写文件绝对路径；`SHA256SUMS` 提供包的 SHA-256。更新时卸载旧包、安装新版，然后完全退出并重新打开 DSH；仅刷新页面不会重载宿主插件树。
+也可下载本页的 `dsh-pet-caishen-0.2.0-rc.6.tgz`，在添加插件时填写文件绝对路径；`SHA256SUMS` 提供包的 SHA-256。更新时卸载旧包、安装新版，然后完全退出并重新打开 DSH；仅刷新页面不会重载宿主插件树。
 
-已完成离线回归、真实 AppKit 窗口定位、独立原生窗口启动、双架构构建与干净打包安装检查；用户确认日常 DSH 中可以拖到顶部。此前隔离 DSH `0.2.2-rc.2` 宿主加载通过，未重新验证浏览器客户端加载或真实任务。完整插件管理器安装流程、Intel 实机、多屏／全屏 Space、连续拖动／穿透／快捷键、VoiceOver 与睡眠唤醒仍待验收，详见[验证记录](https://github.com/MrGuang123/dsh-pet-caishen/blob/v0.2.0-rc.5/docs/VALIDATION.md)。预编译程序采用 ad-hoc 签名，尚未进行 Developer ID 公证。
+已完成离线回归、真实 AppKit 窗口定位、独立原生窗口启动、双架构构建与干净打包安装检查；用户确认日常 DSH 中可以拖到顶部。此前隔离 DSH `0.2.2-rc.2` 宿主加载通过，未重新验证浏览器客户端加载或真实任务。完整插件管理器安装流程、Intel 实机、多屏／全屏 Space、连续拖动／穿透／快捷键、VoiceOver 与睡眠唤醒仍待验收，详见[验证记录](https://github.com/MrGuang123/dsh-pet-caishen/blob/v0.2.0-rc.6/docs/VALIDATION.md)。预编译程序采用 ad-hoc 签名，尚未进行 Developer ID 公证。
 
 阿财只使用任务标题、状态和必要交互标志，不读取消息正文、模型推理或工具参数；“本轮结束”不代表测试或工作结果已验证。主题与宠物可以分别启用。

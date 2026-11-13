@@ -53,7 +53,7 @@ precondition(CompanionGeometry.clampedY(0, screen: small, height: height, top: t
 `);
 });
 
-test("AppKit preserves the content-clamped panel origin above and below the visible screen", { skip: process.platform !== "darwin" }, async t => {
+test("AppKit preserves the content-clamped panel origin above and below the visible screen", { skip: process.platform !== "darwin" ? "macOS required" : process.env.GITHUB_ACTIONS === "true" ? "requires an interactive WindowServer; verified separately on macOS" : false }, async t => {
   await checkSwift(t, `
 import AppKit
 let app = NSApplication.shared

@@ -4,7 +4,7 @@
 
 中文名为「阿财」，拼音标识为 `acai`，英文显示名为 **Acai**。
 
-项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前预发布版本 **0.2.0-rc.5**，适配 **DSH 0.2.2-rc.2、macOS 13+**。`engines.dsh` 覆盖 `0.2.1-rc.5` 起的整条 0.2.x，避免 DSH 小版本升级时把插件整体判定为不兼容。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；0.3 及以上尚未验证。
+项目为第三方插件，与 [财神主题](https://github.com/MrGuang123/dsh-theme-caishen) 配套，也可独立使用。当前预发布版本 **0.2.0-rc.6**，适配 **DSH 0.2.2-rc.2、macOS 13+**。`engines.dsh` 覆盖 `0.2.1-rc.5` 起的整条 0.2.x，避免 DSH 小版本升级时把插件整体判定为不兼容。安装包已包含 Apple Silicon／Intel 通用原生程序，正常安装无需自行编译或安装 Xcode。Windows／Linux 暂不支持桌面宠物；0.3 及以上尚未验证。
 
 ![阿财当前形象 · 空闲状态演示](docs/screenshots/acai-preview.png)
 
@@ -57,7 +57,7 @@ DSH 0.2.2 继续按 `engines.dsh` 拒绝不满足范围的第三方组合包。`
 2. 填写以下完整地址，点击「安装」：
 
    ```text
-   git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.5
+   git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.6
    ```
 
 3. 安装完成后点击「立即启用」，按 DSH 提示刷新或完全退出后重启。
@@ -65,12 +65,12 @@ DSH 0.2.2 继续按 `engines.dsh` 拒绝不满足范围的第三方组合包。`
 
 GitHub 地址必须能从本机访问；切换 npm 镜像不能替代 GitHub 下载。DSH 的安装方式见 [官方插件管理说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.zh.md)。
 
-也可以在 [Releases](https://github.com/MrGuang123/dsh-pet-caishen/releases) 下载 `dsh-pet-caishen-0.2.0-rc.5.tgz`，在「添加插件」中填写该文件的绝对路径。Release 同时提供 `SHA256SUMS`。GitHub 自动生成的源码 ZIP 解压后，也可填写插件目录的绝对路径。
+也可以在 [Releases](https://github.com/MrGuang123/dsh-pet-caishen/releases) 下载 `dsh-pet-caishen-0.2.0-rc.6.tgz`，在「添加插件」中填写该文件的绝对路径。Release 同时提供 `SHA256SUMS`。GitHub 自动生成的源码 ZIP 解压后，也可填写插件目录的绝对路径。
 
 使用已配置 CLI profile 的用户可以运行：
 
 ```bash
-dsh plugin --profile web add 'git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.5'
+dsh plugin --profile web add 'git+https://github.com/MrGuang123/dsh-pet-caishen.git#v0.2.0-rc.6'
 ```
 
 将 `web` 换成实际的 CLI profile 名称；桌面端用户建议直接使用插件页面。

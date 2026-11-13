@@ -18,7 +18,19 @@ jobs:
       - name: Match tag to package version
         run: node --input-type=module -e 'import p from "./package.json" with { type:"json" }; if (process.env.GITHUB_REF_NAME !== `v${p.version}`) process.exit(1)'
       - run: npm run check
-      - run: npm test
+      - name: Run npm test
+        shell: bash
+        run: |
+          set +e
+          npm test > "$RUNNER_TEMP/acai-tests.log" 2>&1
+          result=$?
+          cat "$RUNNER_TEMP/acai-tests.log"
+          if [ "$result" -ne 0 ]; then
+            while IFS= read -r failure; do
+              echo "::error title=Failed test::$failure"
+            done < <(grep '^not ok [0-9]' "$RUNNER_TEMP/acai-tests.log")
+          fi
+          exit "$result"
       - run: codesign --verify --strict --all-architectures native/Acai.app
       - run: npm run check:package
       - run: npm run check:install
